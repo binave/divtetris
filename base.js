@@ -58,13 +58,21 @@ class Cell {
      * @param x {number}
      * @param y {number}
      * @param style {number}
+     */
+    constructor(x, y, style) {
+        this.init(x, y, style);
+    }
+
+    /**
+     * @param x {number}
+     * @param y {number}
+     * @param style {number}
      * @returns {Cell}
      */
     init(x, y, style) {
         this.y = y;
         this.x = x;
         this.style = style;
-        return this;
     }
 
     toString() {
@@ -103,12 +111,12 @@ class Tetromino {
      * O O .  O . O  . O O  O . .  O . .  . . O  . . O  + + +  . X .  . X .  . X .
      *
      * @param {number} style
-     * @returns {Tetromino}
      */
     init(style) {
         this.banMoves = [false, false, false, false]; // up right down lefft
 
         let non_y1, non_x1, non_y2, non_x2, times = 0;
+
         do {
             if (++times > 3) { // 当重复次数超过三次生成 I 型
                 for (let x = 0; x < this.cells.length; x++) {
@@ -126,6 +134,7 @@ class Tetromino {
                 (non_x1 == non_x2 && non_x1 != 2)
             ))
         )
+
 
         let i = 0;
         for (let x = 0; x < 3; x++) {
@@ -161,7 +170,8 @@ class Tetromino {
         //         }
         //     }
         // }
-        return this;
+
+        // return this; // bug: [new Tetromino().init(), new Tetromino().init()]: random undefined
 
     }
 
@@ -208,15 +218,21 @@ class Tetromino {
         }
     }
 
+
+    toString() {
+        return `{cells:[${this.cells}], banMoves:[${this.banMoves}]}`
+    }
+
+
 }
 
 
 /**
  *    |-- width: 4 --|
- * 0,0 1,0 2,0 3,0 4,0 5,0 _
+ * 0,0                 5,0 _
  * 0,1                 5,1 |
  * 0,2       O         5,2 |
- * 0,3   O O O         5,3 | height: 6
+ * 0,3   O O O         5,3 | height: 7
  * 0,4                 5,4 |
  * 0,5                 5,5 |
  * 0,6                 5,6 -
@@ -259,32 +275,29 @@ class Background {
     /** @param {GlobalEventHandlers} element */
     constructor(element) {
         this.#loopRan = Shuffle(4);
+        this.#dual_tetromino = [new Tetromino(), new Tetromino()];
+        this.#dual_tetromino[0].init(this.#loopRan.next().value);
+        this.#dual_tetromino[1].init(this.#loopRan.next().value);
+        this.#current_tetris = this.#dual_tetromino[this.#tetrisIndex];
+
         let cellsStyle = new Array();
         for (let y = 0; y < Background.HEIGHT + Background.#BG_OFFSET; y++) {
             cellsStyle[y] = new Array();
-            if (/* y == 0 ||*/ y == Background.HEIGHT + Background.#BG_OFFSET - 1) {
-                for (let x = 1; x <= Background.WIDTH; x++) {
-                    // cellsStyle[y][x] = y == 0 ? -2 : -1;
-                    cellsStyle[y][x] = -1;
-                }
+            if (y == Background.HEIGHT + Background.#BG_OFFSET - 1) {
+                for (let x = 0; x <= Background.WIDTH + Background.#BG_OFFSET; x++) { cellsStyle[y][x] = -1; }
+
             } else {
-                for (const x of [0, Background.WIDTH + Background.#BG_OFFSET]) {
-                    cellsStyle[y][x] = -1;
-                }
-                for (let x = 1; x <= Background.WIDTH; x++) {
-                    cellsStyle[y][x] = -3;
-                }
+                for (const x of [0, Background.WIDTH + Background.#BG_OFFSET]) { cellsStyle[y][x] = -1; }
+                for (let x = 1; x <= Background.WIDTH; x++) { cellsStyle[y][x] = -3; }
 
             }
         }
         this.#current_cellsStyle = cellsStyle;
-        this.#dual_tetromino = [new Tetromino().init(this.#loopRan.next().value), new Tetromino().init(this.#loopRan.next().value)];
-        this.#current_tetris = this.#dual_tetromino[this.#tetrisIndex];
-        this.#current_tetris.moveBy(5, -1);
 
         element.addEventListener("keyup", (event) => this.#keyUpDown(event, true, this.#ARROW), true);
         element.addEventListener("keydown", (event) => this.#keyUpDown(event, false, this.#ARROW), true);
 
+        this.#current_tetris.moveBy(5, -1);
     }
 
     /**
@@ -309,7 +322,6 @@ class Background {
                 this.#current_cellsStyle[y][x] = -3;
             }
         }
-        return this;
     }
 
     #exchangeTetromino() {
@@ -351,23 +363,25 @@ class Background {
     }
 
     #subLine() {
-        for (let y = Background.HEIGHT; y > 0; y--) {
+        let sub_sum = 0;
+        for (let y = Background.HEIGHT - Background.#BG_OFFSET; y >= 0; y--) {
             let cell_sum = 0;
             for (let x = 1; x <= Background.WIDTH; x++) {
                 if (this.#current_cellsStyle[y][x] >= 0) { cell_sum++; }
             }
             if (cell_sum == Background.WIDTH) {
+                sub_sum++;
                 let styleArr = this.#current_cellsStyle[y];
                 styleArr.fill(-3);
-                // TODO
-                this.#current_cellsStyle.splice(y++, 1 + Background.#BG_OFFSET);
+                styleArr[0] = -1;
+                styleArr[styleArr.length - 1] = -1;
+                this.#current_cellsStyle.splice(y++, 1);
                 this.#current_cellsStyle.unshift(styleArr);
 
             }
 
-            if (cell_sum == 0) {
-                break;
-            }
+            if (cell_sum == 0) { break; }
+
         }
     }
 
@@ -377,7 +391,6 @@ class Background {
      */
     run1Step(backgroundLog) {
         const tetris = this.#current_tetris;
-
         this.#aabb();
 
         if (this.#autoDropSum++ >= Background.#BG_TIMES) {
@@ -391,7 +404,7 @@ class Background {
         if (tetris.banMoves[2]) {
             let game_over = false;
             tetris.cells.forEach(cell => {
-                console.log(`[toBG] ${cell}`);
+                // console.log(`save to background: ${cell}`);
                 if (cell.y >= 0) {
                     this.#current_cellsStyle[cell.y][cell.x] = cell.style;
                 } else { game_over = true; }
@@ -451,21 +464,16 @@ class Background {
         // tetromino diff
         let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#current_tetris.cells;
         for (let i = 0; i < cur_tetris.length; i++) {
-            // console.log(`[all]: old_tetris[${i}]=${old_tetris[i]}, cur_tetris[${i}]=${cur_tetris[i]}`);
             if (old_tetris[i].x != cur_tetris[i].x - 1 || old_tetris[i].y != cur_tetris[i].y || old_tetris[i].style != cur_tetris[i].style) {
-                // console.log(`[c-diff]: old_tetris[${i}]=${old_tetris[i]}, cur_tetris[${i}]=${cur_tetris[i]}`);
                 if (old_tetris[i].x == undefined) {
-                    // console.log(`[c-add] newBg: x:${cur_tetris[i].x - 1}, y:${cur_tetris[i].y} style:${cur_tetris[i].style}`);
-                    newBg.push(new Cell().init(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    newBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
 
                 } else if (old_tetris[i].x == cur_tetris[i].x - 1 && old_tetris[i].y == cur_tetris[i].y) {
-                    // console.log(`[c-add] exBg: x:${cur_tetris[i].x - 1}, y:${cur_tetris[i].y} style:${cur_tetris[i].style}`);
-                    exBg.push(new Cell().init(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    exBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
 
                 } else {
-                    // console.log(`[c-add] oldBg + newBg: x:${old_tetris[i].x}, y:${old_tetris[i].y} style:${old_tetris[i].style} + x:${cur_tetris[i].x - 1}, y:${cur_tetris[i].y} style:${cur_tetris[i].style}`);
-                    oldBg.push(new Cell().init(old_tetris[i].x, old_tetris[i].y, old_tetris[i].style));
-                    newBg.push(new Cell().init(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    oldBg.push(new Cell(old_tetris[i].x, old_tetris[i].y, old_tetris[i].style));
+                    newBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
 
                 }
                 old_tetris[i].x = cur_tetris[i].x - 1;
@@ -483,23 +491,18 @@ class Background {
         for (let y = log_cellsStyle.length - 1; y >= 0; y--) {
             let cellsStyleSum = 0;
             for (let x = 0; x < log_cellsStyle[y].length; x++) {
-                // console.log(`[bg-all]: l:${cellsStyleSum} log_cellsStyle[${y}][${x}]=${log_cellsStyle[y][x]}, cur_cellsStyle[${y}][${x + 1}]=${cur_cellsStyle[y][x + 1]}`);
                 if (log_cellsStyle[y][x] >= 0 || cur_cellsStyle[y][x + 1] >= 0) { cellsStyleSum++; }
                 if (log_cellsStyle[y][x] != cur_cellsStyle[y][x + 1]) {
-                    // console.log(`[bg-diff]: l:${cellsStyleSum} log_cellsStyle[${y}][${x}]=${log_cellsStyle[y][x]}, cur_cellsStyle[${y}][${x + 1}]=${cur_cellsStyle[y][x + 1]}`);
                     if (log_cellsStyle[y][x] != -3 && cur_cellsStyle[y][x + 1] > 0) {
-                        // console.log(`[bg-add] exBg:  x:${x}, y:${y} style:${cur_cellsStyle[y][x + 1]}`);
-                        exBg.push(new Cell().init(x, y, cur_cellsStyle[y][x + 1]));
+                        exBg.push(new Cell(x, y, cur_cellsStyle[y][x + 1]));
                         log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
 
                     } else if (log_cellsStyle[y][x] != -3) {
-                        // console.log(`[bg-add] oldBg: x:${x}, y:${y} style:-3`);
-                        oldBg.push(new Cell().init(x, y, -3));
+                        oldBg.push(new Cell(x, y, -3));
                         log_cellsStyle[y][x] = -3;
 
                     } else {
-                        // console.log(`[bg-add] newBg: x:${x}, y:${y} style:${cur_cellsStyle[y][x + 1]}`);
-                        newBg.push(new Cell().init(x, y, cur_cellsStyle[y][x + 1]));
+                        newBg.push(new Cell(x, y, cur_cellsStyle[y][x + 1]));
                         log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
 
                     }
@@ -531,6 +534,14 @@ class BackgroundLog {
             () => new Array(Background.WIDTH).fill(-3)
         );
         this.log_tetris = Array.from({ length: 4 }, () => new Cell());
+    }
+
+    init() {
+        for (const cs of this.log_cellsStyle) { cs.fill(-3); }
+        for (const cell of this.log_tetris) {
+            cell.init(undefined, undefined, undefined);
+        }
+
     }
 }
 

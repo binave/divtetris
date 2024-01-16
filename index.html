@@ -22,26 +22,44 @@
 
     <script>
 
-        /**
-         * @param t {Tetromino}
-         */
-        function devHtml(t) {
-            let t_html = '';
-            for (const c of t.cells) {
-                if (c.y > 0) {
-                    t_html += `<div id=${c.x * 100 + c.y} class="color${c.style} x${c.x} y${c.y}"></div>`;
-                }
-            }
-            return t_html;
-        }
-
         function step() {
 
             [oldBg, newBg, exBg] = bg.run1Step(bgLog);
 
-            console.log(`oldBg:size=${oldBg.length} ${oldBg}, \nnewBg:size=${newBg.length} ${newBg}, \n exBg:size=${exBg.length} ${exBg}`)
+            // console.log(`oldBg:size=${oldBg.length} ${oldBg},\nnewBg:size=${newBg.length} ${newBg},\n exBg:size=${exBg.length} ${exBg}`)
 
-            // let diff_size = newBg.length - oldBg.length;
+            for (let i = 0; i < exBg.length; i++) {
+                // if (exBg[i].y < 0) { continue; }
+                let oldDiv = document.getElementById(`${exBg[i].x},${exBg[i].y}`);
+                oldDiv.className = `color${exBg[i].style} x${exBg[i].x} y${exBg[i].y}`;
+            }
+
+            let i = 0, diff_size = newBg.length - oldBg.length;
+            for (; i < (diff_size > 0 ? oldBg.length : newBg.length); i++) {
+                // if (newBg[i].y < 0 || oldBg[i].y < 0) { continue; }
+                let oldDiv = document.getElementById(`${oldBg[i].x},${oldBg[i].y}`);
+                oldDiv.className = `color${newBg[i].style} x${newBg[i].x} y${newBg[i].y}`;
+                oldDiv.id = `${newBg[i].x},${newBg[i].y}`;
+
+            }
+
+            if (diff_size > 0) {
+                for (; i < newBg.length; i++) {
+                    // if (newBg[i].y < 0) { continue; }
+                    let newDiv = document.createElement("div");
+                    newDiv.id = `${newBg[i].x},${newBg[i].y}`;
+                    newDiv.className = `color${newBg[i].style} x${newBg[i].x} y${newBg[i].y}`;
+                    body.appendChild(newDiv);
+                }
+
+            } else {
+                for (; i < oldBg.length; i++) {
+                    // if (oldBg[i].y < 0) { continue; }
+                    let oldDiv = document.getElementById(`${oldBg[i].x},${oldBg[i].y}`);
+                    oldDiv.remove();
+                }
+
+            }
 
             setTimeout(function () {
                 step()
