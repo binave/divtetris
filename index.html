@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>dev tetris</title>
+    <style>
+        body {
+            background-color: rgb(29, 29, 25);
+        }
+
+        div {
+            position: absolute;
+            /*display: none;*/
+        }
+    </style>
+</head>
+
+<body>
+    <script type="text/javascript" src="base.js"></script>
+    <script type="text/javascript" src="draw.js"></script>
+
+    <script>
+
+        /**
+         * @param t {Tetromino}
+         */
+        function devHtml(t) {
+            let t_html = '';
+            for (const c of t.cells) {
+                if (c.y > 0) {
+                    t_html += `<div id=${c.x * 100 + c.y} class="color${c.style} x${c.x} y${c.y}"></div>`;
+                }
+            }
+            return t_html;
+        }
+
+        function step() {
+
+            [oldBg, newBg, exBg] = bg.run1Step(bgLog);
+
+            console.log(`oldBg:size=${oldBg.length} ${oldBg}, \nnewBg:size=${newBg.length} ${newBg}, \n exBg:size=${exBg.length} ${exBg}`)
+
+            // let diff_size = newBg.length - oldBg.length;
+
+            setTimeout(function () {
+                step()
+            }, 70);
+        }
+
+        const bgLog = new BackgroundLog();
+        const bg = new Background(window);
+
+        document.getElementsByTagName('head')[0].appendChild(initStyle());
+
+        const body = document.getElementsByTagName('body')[0];
+
+        step()
+
+    </script>
+
+</body>
+
+</html>
