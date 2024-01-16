@@ -1,0 +1,19 @@
+# Ignore all
+*
+
+# Avoid ignoring directory
+!*/
+
+# Avoid ignoring some suffix
+!*.html
+!*.js
+!*.xml
+
+# Avoid ignoring default file
+!.gitignore
+!LICENSE
+!README.md
+
+# Ignore some directory
+.*/
+test/
