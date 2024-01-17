@@ -22,10 +22,10 @@ function initStyle() {
     let style = document.createElement('style');
     style.type = 'text/css';
 
-    for (let i = 1; i < 25; i++) {
-        style.innerHTML += `.x${i} {left: ${3 * i}8px; }`;
-        style.innerHTML += `.y${i} {top: ${3 * i}8px; }`;
-    }
+    // for (let i = 1; i < 25; i++) {
+    //     style.innerHTML += `.x${i} {left: ${3 * i}8px; }`;
+    //     style.innerHTML += `.y${i} {top: ${3 * i}8px; }`;
+    // }
 
     let i = 0;
     for (const v of [[0, 255, 0], [255, 0, 0], [0, 0, 255], [255, 0, 255]]) {
