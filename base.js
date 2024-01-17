@@ -254,7 +254,7 @@ class Background {
 
     static #BG_OFFSET = 1;
 
-    static #BG_TIMES = 8;
+    static #BG_TIMES = 9;
     // static #BG_TIMES = 3;
 
     /** @type {Array<Tetromino>} */
@@ -325,6 +325,7 @@ class Background {
     }
 
     #exchangeTetromino() {
+        console.log(`exchange`);
         this.#current_tetris.init(this.#loopRan.next().value);
         this.#tetrisIndex = 1 - this.#tetrisIndex;
         this.#current_tetris = this.#dual_tetromino[this.#tetrisIndex];
@@ -401,7 +402,6 @@ class Background {
      * @returns {Array<Array<Cell>>}
      */
     run1Step(backgroundLog) {
-
         this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
         this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
 
@@ -414,6 +414,27 @@ class Background {
                 this.#aabb4move();
             }
             this.#autoDropSum = 0;
+        }
+
+        if (this.#ARROW[0] > 0 && this.#ARROW_hold[0] != 2 && !tetris.banMoves[1]) {
+            tetris.moveBy(1, 0);
+
+        } else if (this.#ARROW[0] < 0 && this.#ARROW_hold[0] != -2 && !tetris.banMoves[3]) {
+            tetris.moveBy(-1, 0);
+
+        }
+
+        if (this.#ARROW[1] > 0) {
+            tetris.rotate()
+            this.#ARROW[1] = 0;
+            this.#aabb4rotate();
+            if (tetris.banMoves[0] || tetris.banMoves[1] || tetris.banMoves[2] || tetris.banMoves[3]) {
+                tetris.rotate(true);
+            }
+
+        } else if (this.#ARROW[1] < 0 && !tetris.banMoves[2]) {
+            tetris.moveBy(0, 1);
+
         }
 
         if (tetris.banMoves[2]) {
@@ -440,27 +461,6 @@ class Background {
                 this.#ARROW[0] = 0;
                 return this.#BgDiff(backgroundLog);
             }
-
-        }
-
-        if (this.#ARROW[0] > 0 && !tetris.banMoves[1]) {
-            tetris.moveBy(1, 0);
-
-        } else if (this.#ARROW[0] < 0 && !tetris.banMoves[3]) {
-            tetris.moveBy(-1, 0);
-
-        }
-
-        if (this.#ARROW[1] > 0) {
-            tetris.rotate()
-            this.#ARROW[1] = 0;
-            this.#aabb4rotate();
-            if (tetris.banMoves[0] || tetris.banMoves[1] || tetris.banMoves[2] || tetris.banMoves[3]) {
-                tetris.rotate(true);
-            }
-
-        } else if (this.#ARROW[1] < 0) {
-            tetris.moveBy(0, 1);
 
         }
 

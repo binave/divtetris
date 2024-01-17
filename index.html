@@ -28,23 +28,21 @@
             // console.log(`oldBg:size=${oldBg.length} ${oldBg},\nnewBg:size=${newBg.length} ${newBg},\n exBg:size=${exBg.length} ${exBg}`)
 
             for (let i = 0; i < exBg.length; i += 3) {
-                // if (exBg[i + 1] < 0) { continue; }
                 let oldDiv = document.getElementById(`${exBg[i]},${exBg[i + 1]}`);
                 oldDiv.className = `color${exBg[i + 2]} x${exBg[i]} y${exBg[i + 1]}`;
             }
 
             let i = 0, diff_size = newBg.length - oldBg.length;
             for (; i < (diff_size > 0 ? oldBg.length : newBg.length); i += 3) {
-                // if (newBg[i + 1] < 0 || oldBg[i] < 0) { continue; }
                 let oldDiv = document.getElementById(`${oldBg[i]},${oldBg[i + 1]}`);
-                oldDiv.className = `color${newBg[i + 2]} x${newBg[i]} y${newBg[i + 1]}`;
                 oldDiv.id = `${newBg[i]},${newBg[i + 1]}`;
+                oldDiv.className = `x${newBg[i]} y${newBg[i + 1]}`;
+                if (newBg[i + 1] >= 0) { oldDiv.className += ` color${newBg[i + 2]}`; }
 
             }
 
             if (diff_size > 0) {
                 for (; i < newBg.length; i += 3) {
-                    // if (newBg[i + 1] < 0) { continue; }
                     let newDiv = document.createElement("div");
                     newDiv.id = `${newBg[i]},${newBg[i + 1]}`;
                     newDiv.className = `color${newBg[i + 2]} x${newBg[i]} y${newBg[i + 1]}`;
@@ -53,7 +51,6 @@
 
             } else {
                 for (; i < oldBg.length; i += 3) {
-                    // if (oldBg[i + 1] < 0) { continue; }
                     let oldDiv = document.getElementById(`${oldBg[i]},${oldBg[i + 1]}`);
                     oldDiv.remove();
                 }
