@@ -89,7 +89,7 @@ class Tetromino {
     /** @type {Array<Cell>} */
     cells;
 
-    /** @type {Array<boolean>} */
+    /** @type {Array<boolean>} [up, right, down, lefft] */
     banMoves;
 
     constructor() {
@@ -113,7 +113,7 @@ class Tetromino {
      * @param {number} style
      */
     init(style) {
-        this.banMoves = [false, false, false, false]; // up right down lefft
+        this.banMoves = [false, true, false, true]; // up right down lefft
 
         let non_y1, non_x1, non_y2, non_x2, times = 0;
 
@@ -248,7 +248,7 @@ class Background {
      * @type {Array<number>}
      * [x, y]
     */
-    #ARROW = [0, 0];
+    #ARROW = [0, 0]; #ARROW_hold = [0, 0];
 
     static WIDTH = 10; static HEIGHT = 20;
 
@@ -334,32 +334,43 @@ class Background {
 
     /**
      *
-     * @returns {Array<boolean>}
      */
-    #aabb() {
+    #aabb4move() {
         const tetris = this.#current_tetris;
         tetris.banMoves.fill(false);
         for (const cell of tetris.cells) {
+            if (cell.y < 0) {
+                tetris.banMoves[1] = true;
+                tetris.banMoves[3] = true;
 
+            }
+
+            tetris.banMoves = [
+                tetris.banMoves[0] || (this.#current_cellsStyle[cell.y - 1] != undefined &&
+                    this.#current_cellsStyle[cell.y - 1][cell.x] > -2),
+                tetris.banMoves[1] || (this.#current_cellsStyle[cell.y] != undefined &&
+                    this.#current_cellsStyle[cell.y][cell.x + 1] > -2),
+                tetris.banMoves[2] || (this.#current_cellsStyle[cell.y + 1] != undefined &&
+                    this.#current_cellsStyle[cell.y + 1][cell.x] > -2),
+                tetris.banMoves[3] || (this.#current_cellsStyle[cell.y] != undefined &&
+                    this.#current_cellsStyle[cell.y][cell.x - 1] > -2)
+            ]
+
+
+        }
+    }
+
+    #aabb4rotate() {
+        const tetris = this.#current_tetris;
+        tetris.banMoves.fill(false);
+        for (const cell of tetris.cells) {
             if (this.#current_cellsStyle[cell.y] != undefined &&
                 this.#current_cellsStyle[cell.y][cell.x] > -2) {
                 tetris.banMoves.fill(true);
-
-            } else {
-                tetris.banMoves = [
-                    tetris.banMoves[0] || (this.#current_cellsStyle[cell.y - 1] != undefined &&
-                        this.#current_cellsStyle[cell.y - 1][cell.x] > -2),
-                    tetris.banMoves[1] || (this.#current_cellsStyle[cell.y] != undefined &&
-                        this.#current_cellsStyle[cell.y][cell.x + 1] > -2),
-                    tetris.banMoves[2] || (this.#current_cellsStyle[cell.y + 1] != undefined &&
-                        this.#current_cellsStyle[cell.y + 1][cell.x] > -2),
-                    tetris.banMoves[3] || (this.#current_cellsStyle[cell.y] != undefined &&
-                        this.#current_cellsStyle[cell.y][cell.x - 1] > -2)
-                ]
+                return;
             }
 
         }
-        return tetris.banMoves;
     }
 
     #subLine() {
@@ -390,13 +401,17 @@ class Background {
      * @returns {Array<Array<Cell>>}
      */
     run1Step(backgroundLog) {
+
+        this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
+        this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
+
         const tetris = this.#current_tetris;
-        this.#aabb();
+        this.#aabb4move();
 
         if (this.#autoDropSum++ >= Background.#BG_TIMES) {
             if (!tetris.banMoves[2]) {
                 tetris.moveBy(0, 1);
-                this.#aabb();
+                this.#aabb4move();
             }
             this.#autoDropSum = 0;
         }
@@ -439,7 +454,7 @@ class Background {
         if (this.#ARROW[1] > 0) {
             tetris.rotate()
             this.#ARROW[1] = 0;
-            this.#aabb();
+            this.#aabb4rotate();
             if (tetris.banMoves[0] || tetris.banMoves[1] || tetris.banMoves[2] || tetris.banMoves[3]) {
                 tetris.rotate(true);
             }
@@ -456,7 +471,7 @@ class Background {
 
     /**
      * @param {BackgroundLog} backgroundLog
-     * @returns {Array<Array<Cell>>}
+     * @returns {Array<Array<number>>}
      */
     #BgDiff(backgroundLog) {
         let oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0);
@@ -466,14 +481,14 @@ class Background {
         for (let i = 0; i < cur_tetris.length; i++) {
             if (old_tetris[i].x != cur_tetris[i].x - 1 || old_tetris[i].y != cur_tetris[i].y || old_tetris[i].style != cur_tetris[i].style) {
                 if (old_tetris[i].x == undefined) {
-                    newBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    newBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
 
                 } else if (old_tetris[i].x == cur_tetris[i].x - 1 && old_tetris[i].y == cur_tetris[i].y) {
-                    exBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    exBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
 
                 } else {
-                    oldBg.push(new Cell(old_tetris[i].x, old_tetris[i].y, old_tetris[i].style));
-                    newBg.push(new Cell(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style));
+                    oldBg.push(old_tetris[i].x, old_tetris[i].y, old_tetris[i].style);
+                    newBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
 
                 }
                 old_tetris[i].x = cur_tetris[i].x - 1;
@@ -494,15 +509,15 @@ class Background {
                 if (log_cellsStyle[y][x] >= 0 || cur_cellsStyle[y][x + 1] >= 0) { cellsStyleSum++; }
                 if (log_cellsStyle[y][x] != cur_cellsStyle[y][x + 1]) {
                     if (log_cellsStyle[y][x] != -3 && cur_cellsStyle[y][x + 1] > 0) {
-                        exBg.push(new Cell(x, y, cur_cellsStyle[y][x + 1]));
+                        exBg.push(x, y, cur_cellsStyle[y][x + 1]);
                         log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
 
                     } else if (log_cellsStyle[y][x] != -3) {
-                        oldBg.push(new Cell(x, y, -3));
+                        oldBg.push(x, y, -3);
                         log_cellsStyle[y][x] = -3;
 
                     } else {
-                        newBg.push(new Cell(x, y, cur_cellsStyle[y][x + 1]));
+                        newBg.push(x, y, cur_cellsStyle[y][x + 1]);
                         log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
 
                     }
