@@ -44,7 +44,7 @@ function* Shuffle(size) {
 }
 
 
-class Cell {
+class Block {
     /** @type {number} */
     x;
 
@@ -67,7 +67,7 @@ class Cell {
      * @param x {number}
      * @param y {number}
      * @param style {number}
-     * @returns {Cell}
+     * @returns {Block}
      */
     init(x, y, style) {
         this.y = y;
@@ -86,14 +86,14 @@ class Cell {
  */
 class Tetromino {
 
-    /** @type {Array<Cell>} */
-    cells;
+    /** @type {Array<Block>} */
+    blocks;
 
     /** @type {Array<boolean>} [up, right, down, lefft] */
     banMoves;
 
     constructor() {
-        this.cells = Array.from({ length: 4 }, () => new Cell()); // 初始化4个cell
+        this.blocks = Array.from({ length: 4 }, () => new Block()); // 初始化4个block
     }
 
     /**
@@ -119,8 +119,8 @@ class Tetromino {
 
         do {
             if (++times > 3) { // 当重复次数超过三次生成 I 型
-                for (let x = 0; x < this.cells.length; x++) {
-                    this.cells[x].init(x, 0, style);
+                for (let x = 0; x < this.blocks.length; x++) {
+                    this.blocks[x].init(x, 0, style);
                 }
                 return;
             }
@@ -140,7 +140,7 @@ class Tetromino {
         for (let x = 0; x < 3; x++) {
             for (let y = 0; y < 2; y++) {
                 if (!((x === non_x1 && y === non_y1) || (x === non_x2 && y === non_y2))) {
-                    this.cells[i++].init(x, y, style);
+                    this.blocks[i++].init(x, y, style);
                 }
             }
         }
@@ -150,8 +150,8 @@ class Tetromino {
         //
         // do {
         //     if (++times > 2) { // 当重复次数超过三次生成 I 型
-        //         for (let colume = 0; colume < this.cells.length; colume++) {
-        //             this.cells[colume].init(0, colume, style);
+        //         for (let colume = 0; colume < this.blocks.length; colume++) {
+        //             this.blocks[colume].init(0, colume, style);
         //         }
         //         return;
         //     }
@@ -166,7 +166,7 @@ class Tetromino {
         // for (let row = 0; row < 2; row++) { // 刨去排除的点，产生正反 Z L O T 之一
         //     for (let colume = 0; colume < 3; colume++) {
         //         if (!(row === non_row && colume === non_colume || row === 0 && colume === chirality)) {
-        //             this.cells[i++].init(row, colume, style);
+        //             this.blocks[i++].init(row, colume, style);
         //         }
         //     }
         // }
@@ -180,9 +180,9 @@ class Tetromino {
      * @param y {number}
      */
     moveBy(x, y) {
-        this.cells.forEach(cell => {
-            cell.x += x;
-            cell.y += y;
+        this.blocks.forEach(block => {
+            block.x += x;
+            block.y += y;
         });
     }
 
@@ -193,34 +193,40 @@ class Tetromino {
      * 逆时针旋转 90 度：交换 y 与 x 的坐标并左右翻转。
      * 在交换过程中需要减去与 0,0 的间距，
      * 在 0,0 点交换 y 与 x 会得到与目标图样颠倒的图样，
-     * 然后用 0 减去 x 或 y，再将间距加回来。
+     * 然后用 2 减去 x 或 y，再将间距加回来。
      * 再移动回原来的位置即可实现旋转。
      *
      * @param counterclockwise {boolean}
      */
     rotate(counterclockwise) {
-        let min_x = this.cells[0].x, min_y = this.cells[0].y;
-        for (let i = 1; i < this.cells.length; i++) {
-            min_x = Math.min(this.cells[i].x, min_x);
-            min_y = Math.min(this.cells[i].y, min_y);
+        // console.log(`rotate: before ${counterclockwise ? 1 : 0} ${this.blocks}`);
+        let min_x = this.blocks[0].x, min_y = this.blocks[0].y;
+        let line_x = true, line_y = true; // 用于判断直线
+        for (let i = 1; i < this.blocks.length; i++) {
+            min_x = Math.min(this.blocks[i].x, min_x);
+            min_y = Math.min(this.blocks[i].y, min_y);
+            line_x = line_x && this.blocks[0].x == this.blocks[i].x;
+            line_y = line_y && this.blocks[0].y == this.blocks[i].y;
         }
 
-        let emptyCol0 = 0;
-        this.cells.forEach(cell => {
-            let old_cell_x = cell.x;
-            cell.x = (counterclockwise ? cell.y - min_y : 2 - (cell.y - min_y)) + min_x;
-            cell.y = (!counterclockwise ? old_cell_x - min_x : 2 - (old_cell_x - min_x)) + min_y;
-            emptyCol0 += min_x != cell.x ? 1 : 0;
+        if (line_x || line_y) { counterclockwise = false; }
+
+        let empty_line = 0;
+        this.blocks.forEach(block => {
+            let old_block_x = block.x;
+            block.x = (counterclockwise ? block.y - min_y : 2 - (block.y - min_y)) + min_x;
+            block.y = (!counterclockwise ? old_block_x - min_x : 2 - (old_block_x - min_x)) + min_y;
+            empty_line += counterclockwise ? (min_y != block.y ? 1 : 0) : (min_x != block.x ? 1 : 0);
+
         });
 
-        if (emptyCol0 == this.cells.length) { // 如果左一列均为空，方块左移
-            this.moveBy(-1, 0);
-        }
+        if (empty_line == this.blocks.length) { this.moveBy(counterclockwise ? 0 : -1, counterclockwise ? -1 : 0); }
+        // console.log(`rotate: after ${counterclockwise ? 1 : 0} ${this.blocks}`);
+
     }
 
-
     toString() {
-        return `{cells:[${this.cells}], banMoves:[${this.banMoves}]}`
+        return `{blocks:[${this.blocks}], banMoves:[${this.banMoves}]}`
     }
 
 
@@ -232,45 +238,44 @@ class Tetromino {
  * 0,0                 5,0 _
  * 0,1                 5,1 |
  * 0,2       O         5,2 |
- * 0,3   O O O         5,3 | height: 7
+ * 0,3   O O O         5,3 | height: 8
  * 0,4                 5,4 |
  * 0,5                 5,5 |
- * 0,6                 5,6 -
- * 0,7 1,7 2,7 3,7 4,7 5,7
+ * 0,6                 5,6 |
+ * 0,7                 5,7 -
+ * 0,8 1,8 2,8 3,8 4,8 5,8
  */
 
-class Background {
+export class Background {
 
     /** @type {Generator<number, void, unknown>} 随机不重复数字 */
     #loopRan;
 
     /**
      * @type {Array<number>}
-     * [x, y]
+     * #ARROW = [x, y, pause]; // 按键按下状态。
+     * #ARROW_hold = [0, 0]; // 每步累计的按键累加值。
     */
-    #ARROW = [0, 0]; #ARROW_hold = [0, 0];
+    #ARROW = [0, 0, 0]; #ARROW_hold = [0, 0];
 
     static WIDTH = 10; static HEIGHT = 20;
 
-    static #BG_OFFSET = 1;
+    static #BG_WIDTH_OFFSET = 1;
 
-    static #BG_TIMES = 9;
-    // static #BG_TIMES = 3;
+    static #BG_AUTO_DROP_CYCLE = 11;
+    // static #BG_AUTO_DROP_CYCLE = 3;
+
+    /** @type {number} */
+    #autoDropSum = 0;
 
     /** @type {Array<Tetromino>} */
     #dual_tetromino;
 
     /** @type {number} */
-    #tetrisIndex = 0;
-
-    /** @type {Tetromino} */
-    #current_tetris;
+    #tetIdx = 0;
 
     /** @type {Array<Array<number>>} */
-    #current_cellsStyle;
-
-    /** @type {number} */
-    #autoDropSum = 8;
+    #current_blocksStyle;
 
     /** @param {GlobalEventHandlers} element */
     constructor(element) {
@@ -278,26 +283,25 @@ class Background {
         this.#dual_tetromino = [new Tetromino(), new Tetromino()];
         this.#dual_tetromino[0].init(this.#loopRan.next().value);
         this.#dual_tetromino[1].init(this.#loopRan.next().value);
-        this.#current_tetris = this.#dual_tetromino[this.#tetrisIndex];
 
-        let cellsStyle = new Array();
-        for (let y = 0; y < Background.HEIGHT + Background.#BG_OFFSET; y++) {
-            cellsStyle[y] = new Array();
-            if (y == Background.HEIGHT + Background.#BG_OFFSET - 1) {
-                for (let x = 0; x <= Background.WIDTH + Background.#BG_OFFSET; x++) { cellsStyle[y][x] = -1; }
+        let blocksStyle = new Array();
+        for (let y = 0; y < Background.HEIGHT + Background.#BG_WIDTH_OFFSET; y++) {
+            blocksStyle[y] = new Array();
+            if (y == Background.HEIGHT + Background.#BG_WIDTH_OFFSET - 1) {
+                for (let x = 0; x <= Background.WIDTH + Background.#BG_WIDTH_OFFSET; x++) { blocksStyle[y][x] = -1; }
 
             } else {
-                for (const x of [0, Background.WIDTH + Background.#BG_OFFSET]) { cellsStyle[y][x] = -1; }
-                for (let x = 1; x <= Background.WIDTH; x++) { cellsStyle[y][x] = -3; }
+                for (const x of [0, Background.WIDTH + Background.#BG_WIDTH_OFFSET]) { blocksStyle[y][x] = -1; }
+                for (let x = 1; x <= Background.WIDTH; x++) { blocksStyle[y][x] = -3; }
 
             }
         }
-        this.#current_cellsStyle = cellsStyle;
+        this.#current_blocksStyle = blocksStyle;
 
         element.addEventListener("keyup", (event) => this.#keyUpDown(event, true, this.#ARROW), true);
         element.addEventListener("keydown", (event) => this.#keyUpDown(event, false, this.#ARROW), true);
 
-        this.#current_tetris.moveBy(5, -1);
+        this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
     }
 
     /**
@@ -306,162 +310,181 @@ class Background {
      * @param {Array<number>} arrow
      */
     #keyUpDown(event, isKeyUp, arrow) {
+        // console.log(`PRESS: <${event.code}> ${isKeyUp ? 'up' : 'down'}`);
         switch (event.code) {
             case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
             case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
             case "ArrowLeft": arrow[0] = isKeyUp ? 0 : -1; break;
             case "ArrowRight": arrow[0] = isKeyUp ? 0 : 1; break;
+            case "Space": case "KeyP": if (!isKeyUp) { arrow[2] = arrow[2] == 0 ? 1 : 0; } break;
+            case "ShiftLeft": case "ShiftRight": break;
+            default: break;
         }
 
     }
 
     init() {
         this.#exchangeTetromino();
+        this.#autoDropSum = 0;
         for (let y = 0; y < Background.HEIGHT; y++) {
             for (let x = 1; x <= Background.WIDTH; x++) {
-                this.#current_cellsStyle[y][x] = -3;
+                this.#current_blocksStyle[y][x] = -3;
             }
         }
     }
 
     #exchangeTetromino() {
-        console.log(`exchange`);
-        this.#current_tetris.init(this.#loopRan.next().value);
-        this.#tetrisIndex = 1 - this.#tetrisIndex;
-        this.#current_tetris = this.#dual_tetromino[this.#tetrisIndex];
-        this.#current_tetris.moveBy(5, -1);
+        // console.log(`exchange`);
+        // for (let y = 0; y < this.#current_blocksStyle.length; y++) {
+        //     console.log(`${y} ${this.#current_blocksStyle[y]}`);
+        // }
+        this.#dual_tetromino[this.#tetIdx].init(this.#loopRan.next().value);
+        this.#tetIdx = 1 - this.#tetIdx;
+        this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
 
     }
 
     /**
      *
      */
-    #aabb4move() {
-        const tetris = this.#current_tetris;
+    #borderAABB() {
+        const tetris = this.#dual_tetromino[this.#tetIdx], cur_style = this.#current_blocksStyle;
         tetris.banMoves.fill(false);
-        for (const cell of tetris.cells) {
-            if (cell.y < 0) {
+        for (const block of tetris.blocks) {
+            if (block.y < 0) {
                 tetris.banMoves[1] = true;
                 tetris.banMoves[3] = true;
-
             }
 
             tetris.banMoves = [
-                tetris.banMoves[0] || (this.#current_cellsStyle[cell.y - 1] != undefined &&
-                    this.#current_cellsStyle[cell.y - 1][cell.x] > -2),
-                tetris.banMoves[1] || (this.#current_cellsStyle[cell.y] != undefined &&
-                    this.#current_cellsStyle[cell.y][cell.x + 1] > -2),
-                tetris.banMoves[2] || (this.#current_cellsStyle[cell.y + 1] != undefined &&
-                    this.#current_cellsStyle[cell.y + 1][cell.x] > -2),
-                tetris.banMoves[3] || (this.#current_cellsStyle[cell.y] != undefined &&
-                    this.#current_cellsStyle[cell.y][cell.x - 1] > -2)
+                tetris.banMoves[0] /*|| (cur_style[block.y - 1] != undefined &&
+                    cur_style[block.y - 1][block.x] > -2) */,
+                tetris.banMoves[1] || (cur_style[block.y] != undefined &&
+                    cur_style[block.y][block.x + 1] > -2),
+                tetris.banMoves[2] || (cur_style[block.y + 1] != undefined &&
+                    cur_style[block.y + 1][block.x] > -2),
+                tetris.banMoves[3] || (cur_style[block.y] != undefined &&
+                    cur_style[block.y][block.x - 1] > -2)
             ]
-
-
-        }
-    }
-
-    #aabb4rotate() {
-        const tetris = this.#current_tetris;
-        tetris.banMoves.fill(false);
-        for (const cell of tetris.cells) {
-            if (this.#current_cellsStyle[cell.y] != undefined &&
-                this.#current_cellsStyle[cell.y][cell.x] > -2) {
-                tetris.banMoves.fill(true);
-                return;
-            }
-
-        }
-    }
-
-    #subLine() {
-        let sub_sum = 0;
-        for (let y = Background.HEIGHT - Background.#BG_OFFSET; y >= 0; y--) {
-            let cell_sum = 0;
-            for (let x = 1; x <= Background.WIDTH; x++) {
-                if (this.#current_cellsStyle[y][x] >= 0) { cell_sum++; }
-            }
-            if (cell_sum == Background.WIDTH) {
-                sub_sum++;
-                let styleArr = this.#current_cellsStyle[y];
-                styleArr.fill(-3);
-                styleArr[0] = -1;
-                styleArr[styleArr.length - 1] = -1;
-                this.#current_cellsStyle.splice(y++, 1);
-                this.#current_cellsStyle.unshift(styleArr);
-
-            }
-
-            if (cell_sum == 0) { break; }
 
         }
     }
 
     /**
-     * @param {BackgroundLog} backgroundLog
-     * @returns {Array<Array<Cell>>}
+     * @returns {boolean} hit
      */
-    run1Step(backgroundLog) {
-        this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
-        this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
-
-        const tetris = this.#current_tetris;
-        this.#aabb4move();
-
-        if (this.#autoDropSum++ >= Background.#BG_TIMES) {
-            if (!tetris.banMoves[2]) {
-                tetris.moveBy(0, 1);
-                this.#aabb4move();
+    #overAABB() {
+        // console.log(`overAABB: ${this.#dual_tetromino[this.#tetIdx].blocks}`);
+        for (const block of this.#dual_tetromino[this.#tetIdx].blocks) {
+            // console.log(`overAABB: ${block.y} ${this.#current_blocksStyle[block.y]}`);
+            if (this.#current_blocksStyle[block.y] != undefined &&
+                this.#current_blocksStyle[block.y][block.x] > -2) {
+                // console.log(`overAABB: true`);
+                return true;
             }
-            this.#autoDropSum = 0;
+        }
+        return false;
+    }
+
+    #subLine() {
+        let sub_sum = 0;
+        for (let y = Background.HEIGHT - Background.#BG_WIDTH_OFFSET; y >= 0; y--) {
+            let block_sum = 0;
+            for (let x = 1; x <= Background.WIDTH; x++) {
+                if (this.#current_blocksStyle[y][x] >= 0) { block_sum++; }
+            }
+            if (block_sum == Background.WIDTH) {
+                sub_sum++;
+                let styleArr = this.#current_blocksStyle[y];
+                styleArr.fill(-3);
+                styleArr[0] = -1;
+                styleArr[styleArr.length - 1] = -1;
+                this.#current_blocksStyle.splice(y++, 1);
+                this.#current_blocksStyle.unshift(styleArr);
+
+            }
+
+            if (block_sum == 0) { break; }
+
         }
 
-        if (this.#ARROW[0] > 0 && this.#ARROW_hold[0] != 2 && !tetris.banMoves[1]) {
-            tetris.moveBy(1, 0);
+        switch (sub_sum) {
+            case 1: break;
+            case 2: break;
+            case 3: break;
+            case 4: break;
+            default: break;
+        }
+    }
 
-        } else if (this.#ARROW[0] < 0 && this.#ARROW_hold[0] != -2 && !tetris.banMoves[3]) {
-            tetris.moveBy(-1, 0);
+    #hitBottom() {
+        let game_over = false;
+        const tetris = this.#dual_tetromino[this.#tetIdx];
+        console.log(`save to background: ${tetris.blocks}`);
+        tetris.blocks.forEach(block => {
+            if (block.y >= 0) {
+                this.#current_blocksStyle[block.y][block.x] = block.style;
+
+            } else { game_over = true; }
+        });
+
+        if (game_over) {
+            console.log(`game over`);
+            this.init();
+            tetris.banMoves[2] = false;
+            // this.#ARROW[2] = 1;
+
+        } else {
+            this.#subLine();
+            this.#exchangeTetromino();
+            tetris.banMoves[1] = true;
+            tetris.banMoves[3] = true;
+
+        }
+
+    }
+
+    /**
+     * @param {BackgroundLog} backgroundLog
+     * @returns {Array<Array<number>>}
+     */
+    run1Step(backgroundLog) {
+        if (this.#ARROW[2] == 1) { /* console.log(`pause`); */ return [[], [], [], 1]; }
+
+        this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
+        this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
+        // console.log(`ARROW:${this.#ARROW}, ARROW_hold:${this.#ARROW_hold}`);
+        const tetris = this.#dual_tetromino[this.#tetIdx];
+
+        if (this.#ARROW[0] > 0 && this.#ARROW_hold[0] != 2) {
+            this.#borderAABB();
+            if (!tetris.banMoves[1]) { tetris.moveBy(1, 0); }
+
+        } else if (this.#ARROW[0] < 0 && this.#ARROW_hold[0] != -2) {
+            this.#borderAABB();
+            if (!tetris.banMoves[3]) { tetris.moveBy(-1, 0); }
 
         }
 
         if (this.#ARROW[1] > 0) {
-            tetris.rotate()
-            this.#ARROW[1] = 0;
-            this.#aabb4rotate();
-            if (tetris.banMoves[0] || tetris.banMoves[1] || tetris.banMoves[2] || tetris.banMoves[3]) {
-                tetris.rotate(true);
+            if (this.#ARROW_hold[1] == 1) {
+                tetris.rotate(false)
+                if (this.#overAABB()) { tetris.rotate(true); }
+
             }
 
-        } else if (this.#ARROW[1] < 0 && !tetris.banMoves[2]) {
-            tetris.moveBy(0, 1);
+        } else if (this.#ARROW[1] < 0) {
+            this.#borderAABB();
+            if (tetris.banMoves[2]) { this.#hitBottom(); } else { tetris.moveBy(0, 1); }
 
         }
 
-        if (tetris.banMoves[2]) {
-            let game_over = false;
-            tetris.cells.forEach(cell => {
-                // console.log(`save to background: ${cell}`);
-                if (cell.y >= 0) {
-                    this.#current_cellsStyle[cell.y][cell.x] = cell.style;
-                } else { game_over = true; }
-            });
-
-            if (game_over) {
-                console.log(`game over`);
-                tetris.banMoves[2] = false;
-                this.init();
-                return this.#BgDiff(backgroundLog);
-
-            } else {
-                this.#subLine();
-                this.#exchangeTetromino();
-
-                tetris.banMoves[1] = true;
-                tetris.banMoves[3] = true;
-                this.#ARROW[0] = 0;
-                return this.#BgDiff(backgroundLog);
+        if (this.#autoDropSum++ >= Background.#BG_AUTO_DROP_CYCLE) {
+            this.#autoDropSum = 0;
+            if (this.#ARROW[1] >= 0) {
+                this.#borderAABB();
+                if (tetris.banMoves[2]) { this.#hitBottom(); } else { tetris.moveBy(0, 1); }
             }
-
         }
 
         return this.#BgDiff(backgroundLog);
@@ -477,7 +500,7 @@ class Background {
         let oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0);
 
         // tetromino diff
-        let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#current_tetris.cells;
+        let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
         for (let i = 0; i < cur_tetris.length; i++) {
             if (old_tetris[i].x != cur_tetris[i].x - 1 || old_tetris[i].y != cur_tetris[i].y || old_tetris[i].style != cur_tetris[i].style) {
                 if (old_tetris[i].x == undefined) {
@@ -497,64 +520,60 @@ class Background {
             }
         }
 
-        // if () {
-        //     return [oldBg, newBg, exBg]
-        // }
-
         // background diff
-        let log_cellsStyle = backgroundLog.log_cellsStyle, cur_cellsStyle = this.#current_cellsStyle;
-        for (let y = log_cellsStyle.length - 1; y >= 0; y--) {
-            let cellsStyleSum = 0;
-            for (let x = 0; x < log_cellsStyle[y].length; x++) {
-                if (log_cellsStyle[y][x] >= 0 || cur_cellsStyle[y][x + 1] >= 0) { cellsStyleSum++; }
-                if (log_cellsStyle[y][x] != cur_cellsStyle[y][x + 1]) {
-                    if (log_cellsStyle[y][x] != -3 && cur_cellsStyle[y][x + 1] > 0) {
-                        exBg.push(x, y, cur_cellsStyle[y][x + 1]);
-                        log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
+        let log_blocksStyle = backgroundLog.log_blocksStyle, cur_blocksStyle = this.#current_blocksStyle;
+        for (let y = log_blocksStyle.length - 1; y >= 0; y--) {
+            let blocksStyleSum = 0;
+            for (let x = 0; x < log_blocksStyle[y].length; x++) {
+                if (log_blocksStyle[y][x] >= 0 || cur_blocksStyle[y][x + 1] >= 0) { blocksStyleSum++; }
+                if (log_blocksStyle[y][x] != cur_blocksStyle[y][x + 1]) {
+                    if (log_blocksStyle[y][x] != -3 && cur_blocksStyle[y][x + 1] > 0) {
+                        exBg.push(x, y, cur_blocksStyle[y][x + 1]);
+                        log_blocksStyle[y][x] = cur_blocksStyle[y][x + 1];
 
-                    } else if (log_cellsStyle[y][x] != -3) {
+                    } else if (log_blocksStyle[y][x] != -3) {
                         oldBg.push(x, y, -3);
-                        log_cellsStyle[y][x] = -3;
+                        log_blocksStyle[y][x] = -3;
 
                     } else {
-                        newBg.push(x, y, cur_cellsStyle[y][x + 1]);
-                        log_cellsStyle[y][x] = cur_cellsStyle[y][x + 1];
+                        newBg.push(x, y, cur_blocksStyle[y][x + 1]);
+                        log_blocksStyle[y][x] = cur_blocksStyle[y][x + 1];
 
                     }
 
                 }
             }
-            if (cellsStyleSum == 0) {
+            if (blocksStyleSum == 0) {
                 break;
             }
         }
-        return [oldBg, newBg, exBg]
+        return [oldBg, newBg, exBg, 0]
 
     }
 
 }
 
 
-class BackgroundLog {
+export class BackgroundLog {
 
-    /** @type {Array<Cell>} */
+    /** @type {Array<Block>} */
     log_tetris;
 
     /** @type {Array<Array<number>>} */
-    log_cellsStyle;
+    log_blocksStyle;
 
     constructor() {
-        this.log_cellsStyle = Array.from(
+        this.log_blocksStyle = Array.from(
             { length: Background.HEIGHT },
             () => new Array(Background.WIDTH).fill(-3)
         );
-        this.log_tetris = Array.from({ length: 4 }, () => new Cell());
+        this.log_tetris = Array.from({ length: 4 }, () => new Block());
     }
 
     init() {
-        for (const cs of this.log_cellsStyle) { cs.fill(-3); }
-        for (const cell of this.log_tetris) {
-            cell.init(undefined, undefined, undefined);
+        for (const cs of this.log_blocksStyle) { cs.fill(-3); }
+        for (const block of this.log_tetris) {
+            block.init(undefined, undefined, undefined);
         }
 
     }

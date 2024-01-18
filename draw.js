@@ -40,7 +40,7 @@ function initStyle() {
             v[2] == 255 ? 170 : v[2]
         ];
 
-        style.innerHTML += `.color${i++} {
+        style.innerHTML += `.c${i++} {
         width: 20px; height: 20px;
         background-color: rgb(${v[0]}, ${v[1]}, ${v[2]});
         border: 5px solid rgb(${l[0]}, ${l[1]}, ${l[2]});
