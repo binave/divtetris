@@ -335,9 +335,6 @@ export class Background {
 
     #exchangeTetromino() {
         // console.log(`exchange`);
-        // for (let y = 0; y < this.#current_blocksStyle.length; y++) {
-        //     console.log(`${y} ${this.#current_blocksStyle[y]}`);
-        // }
         this.#dual_tetromino[this.#tetIdx].init(this.#loopRan.next().value);
         this.#tetIdx = 1 - this.#tetIdx;
         this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
@@ -357,13 +354,13 @@ export class Background {
             }
 
             tetris.banMoves = [
-                tetris.banMoves[0] /*|| (cur_style[block.y - 1] != undefined &&
+                tetris.banMoves[0] /*|| (cur_style[block.y - 1] == undefined ||
                     cur_style[block.y - 1][block.x] > -2) */,
-                tetris.banMoves[1] || (cur_style[block.y] != undefined &&
+                tetris.banMoves[1] || (cur_style[block.y] == undefined ||
                     cur_style[block.y][block.x + 1] > -2),
-                tetris.banMoves[2] || (cur_style[block.y + 1] != undefined &&
+                tetris.banMoves[2] || (cur_style[block.y + 1] == undefined ||
                     cur_style[block.y + 1][block.x] > -2),
-                tetris.banMoves[3] || (cur_style[block.y] != undefined &&
+                tetris.banMoves[3] || (cur_style[block.y] == undefined ||
                     cur_style[block.y][block.x - 1] > -2)
             ]
 
@@ -374,12 +371,9 @@ export class Background {
      * @returns {boolean} hit
      */
     #overAABB() {
-        // console.log(`overAABB: ${this.#dual_tetromino[this.#tetIdx].blocks}`);
         for (const block of this.#dual_tetromino[this.#tetIdx].blocks) {
-            // console.log(`overAABB: ${block.y} ${this.#current_blocksStyle[block.y]}`);
-            if (this.#current_blocksStyle[block.y] != undefined &&
+            if (this.#current_blocksStyle[block.y] == undefined ||
                 this.#current_blocksStyle[block.y][block.x] > -2) {
-                // console.log(`overAABB: true`);
                 return true;
             }
         }
@@ -420,7 +414,7 @@ export class Background {
     #hitBottom() {
         let game_over = false;
         const tetris = this.#dual_tetromino[this.#tetIdx];
-        console.log(`save to background: ${tetris.blocks}`);
+        // console.log(`save to background: ${tetris.blocks}`);
         tetris.blocks.forEach(block => {
             if (block.y >= 0) {
                 this.#current_blocksStyle[block.y][block.x] = block.style;
@@ -432,7 +426,7 @@ export class Background {
             console.log(`game over`);
             this.init();
             tetris.banMoves[2] = false;
-            // this.#ARROW[2] = 1;
+            this.#ARROW[2] = 1;
 
         } else {
             this.#subLine();
@@ -499,8 +493,27 @@ export class Background {
     #BgDiff(backgroundLog) {
         let oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0);
 
+        let old_ready_tetris = backgroundLog.log_dual_tetris[1], cur_ready_tetris = this.#dual_tetromino[1 - this.#tetIdx].blocks;
+        for (let i = 0; i < old_ready_tetris.length; i++) {
+            if (old_ready_tetris[i].x != cur_ready_tetris[i].x + Background.WIDTH + 3 || old_ready_tetris[i].y != cur_ready_tetris[i].y + 2 || old_ready_tetris[i].style != cur_ready_tetris[i].style) {
+                if (old_ready_tetris[i].x == undefined) {
+                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                } else if (old_ready_tetris[i].x == cur_ready_tetris[i].x + Background.WIDTH + 3 && old_ready_tetris[i].y == cur_ready_tetris[i].y + 2) {
+                    exBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                } else {
+                    oldBg.push(old_ready_tetris[i].x, old_ready_tetris[i].y, old_ready_tetris[i].style);
+                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                }
+                old_ready_tetris[i].init(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+            }
+        }
+
         // tetromino diff
-        let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
+        let old_tetris = backgroundLog.log_dual_tetris[0], cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
+        // let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
         for (let i = 0; i < cur_tetris.length; i++) {
             if (old_tetris[i].x != cur_tetris[i].x - 1 || old_tetris[i].y != cur_tetris[i].y || old_tetris[i].style != cur_tetris[i].style) {
                 if (old_tetris[i].x == undefined) {
@@ -514,9 +527,7 @@ export class Background {
                     newBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
 
                 }
-                old_tetris[i].x = cur_tetris[i].x - 1;
-                old_tetris[i].y = cur_tetris[i].y;
-                old_tetris[i].style = cur_tetris[i].style;
+                old_tetris[i].init(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
             }
         }
 
@@ -556,8 +567,11 @@ export class Background {
 
 export class BackgroundLog {
 
-    /** @type {Array<Block>} */
-    log_tetris;
+    // /** @type {Array<Block>} */
+    // log_tetris;
+
+    /** @type {Array<Array<Block>>} */
+    log_dual_tetris;
 
     /** @type {Array<Array<number>>} */
     log_blocksStyle;
@@ -567,15 +581,23 @@ export class BackgroundLog {
             { length: Background.HEIGHT },
             () => new Array(Background.WIDTH).fill(-3)
         );
-        this.log_tetris = Array.from({ length: 4 }, () => new Block());
+        // this.log_tetris = Array.from({ length: 4 }, () => new Block());
+
+        // this.log_dual_tetris = Array.from({ length: 2 }, () => new Array(4).fill(new Block())); // bug: Array().fill(): same obj
+        this.log_dual_tetris = Array.from({ length: 2 }, () => Array.from({ length: 4 }, () => new Block()));
+
     }
 
     init() {
         for (const cs of this.log_blocksStyle) { cs.fill(-3); }
-        for (const block of this.log_tetris) {
-            block.init(undefined, undefined, undefined);
+        // for (const block of this.log_tetris) {
+        //     block.init(undefined, undefined, undefined);
+        // }
+        for (const tetris of this.log_dual_tetris) {
+            for (const block of tetris) {
+                block.init(undefined, undefined, undefined);
+            }
         }
-
     }
 }
 
