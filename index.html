@@ -28,38 +28,43 @@
 
             let [oldBg, newBg, exBg, status] = bg.run1Step(bgLog);
 
-            // console.log(`oldBg:size=${oldBg.length} ${oldBg},\nnewBg:size=${newBg.length} ${newBg},\n exBg:size=${exBg.length} ${exBg}`)
+            if (status == 0) {
+                // console.log(`oldBg:size=${oldBg.length} ${oldBg},\nnewBg:size=${newBg.length} ${newBg},\n exBg:size=${exBg.length} ${exBg}`)
 
-            for (let i = 0; i < exBg.length; i += 3) {
-                let oldDiv = document.getElementById(`${exBg[i]},${exBg[i + 1]}`);
-                oldDiv.style.left = `${exBg[i] * 3}8px`;
-                oldDiv.style.top = `${exBg[i + 1] * 3}8px`;
-                oldDiv.className = exBg[i + 1] >= 0 ? `c${exBg[i + 2]}` : '';
-            }
+                for (let i = 0; i < exBg.length; i += 3) {
+                    let oldDiv = document.getElementById(`${exBg[i]},${exBg[i + 1]}`);
+                    oldDiv.className = exBg[i + 1] >= 0 ? `c${exBg[i + 2]}` : '';
 
-            let i = 0, diff_size = newBg.length - oldBg.length;
-            for (; i < (diff_size > 0 ? oldBg.length : newBg.length); i += 3) {
-                let oldDiv = document.getElementById(`${oldBg[i]},${oldBg[i + 1]}`);
-                oldDiv.id = `${newBg[i]},${newBg[i + 1]}`;
-                oldDiv.style.left = `${newBg[i] * 3}8px`;
-                oldDiv.style.top = `${newBg[i + 1] * 3}8px`;
-                oldDiv.className = newBg[i + 1] >= 0 ? `c${newBg[i + 2]}` : '';
-            }
-
-            if (diff_size > 0) {
-                for (; i < newBg.length; i += 3) {
-                    let newDiv = document.createElement("div");
-                    newDiv.id = `${newBg[i]},${newBg[i + 1]}`;
-                    newDiv.style.left = `${newBg[i] * 3}8px`;
-                    newDiv.style.top = `${newBg[i + 1] * 3}8px`;
-                    newDiv.className = newBg[i + 1] >= 0 ? `c${newBg[i + 2]}` : '';
-                    body.appendChild(newDiv);
                 }
 
-            } else {
-                for (; i < oldBg.length; i += 3) {
+                let i = 0, diff_size = newBg.length - oldBg.length;
+
+                for (; i < (diff_size > 0 ? oldBg.length : newBg.length); i += 3) {
                     let oldDiv = document.getElementById(`${oldBg[i]},${oldBg[i + 1]}`);
-                    oldDiv.remove();
+                    oldDiv.style.left = `${newBg[i] * 3}8px`;
+                    oldDiv.style.top = `${newBg[i + 1] * 3}8px`;
+                    oldDiv.className = newBg[i + 1] >= 0 ? `c${newBg[i + 2]}` : '';
+                    oldDiv.id = `${newBg[i]},${newBg[i + 1]}`;
+                }
+
+
+                if (diff_size > 0) {
+                    for (; i < newBg.length; i += 3) {
+                        let newDiv = document.createElement("div");
+                        newDiv.id = `${newBg[i]},${newBg[i + 1]}`;
+                        newDiv.style.left = `${newBg[i] * 3}8px`;
+                        newDiv.style.top = `${newBg[i + 1] * 3}8px`;
+                        newDiv.className = newBg[i + 1] >= 0 ? `c${newBg[i + 2]}` : '';
+                        body.appendChild(newDiv);
+
+                    }
+
+                } else {
+                    for (; i < oldBg.length; i += 3) {
+                        let oldDiv = document.getElementById(`${oldBg[i]},${oldBg[i + 1]}`);
+                        oldDiv.remove();
+                    }
+
                 }
 
             }

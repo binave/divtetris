@@ -253,10 +253,10 @@ export class Background {
 
     /**
      * @type {Array<number>}
-     * #ARROW = [x, y, pause]; // 按键按下状态。
+     * #ARROW = [-x+, -y+, pause/game_over]; // 按键按下状态。
      * #ARROW_hold = [0, 0]; // 每步累计的按键累加值。
     */
-    #ARROW = [0, 0, 0]; #ARROW_hold = [0, 0];
+    #ARROW = [0, 0, 0]; #ARROW_hold = [0, 0, 0];
 
     static WIDTH = 10; static HEIGHT = 20;
 
@@ -447,6 +447,7 @@ export class Background {
 
         this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
         this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
+        this.#ARROW[2] == 0 ? this.#ARROW_hold[2] = 0 : this.#ARROW_hold[2] += this.#ARROW[2];
         // console.log(`ARROW:${this.#ARROW}, ARROW_hold:${this.#ARROW_hold}`);
         const tetris = this.#dual_tetromino[this.#tetIdx];
 
@@ -462,8 +463,11 @@ export class Background {
 
         if (this.#ARROW[1] > 0) {
             if (this.#ARROW_hold[1] == 1) {
-                tetris.rotate(false)
-                if (this.#overAABB()) { tetris.rotate(true); }
+                tetris.rotate()
+                if (this.#overAABB()) {
+                    // tetris.rotate(); tetris.rotate(); tetris.rotate();
+                    tetris.rotate(true);
+                }
 
             }
 
@@ -491,30 +495,13 @@ export class Background {
      * @returns {Array<Array<number>>}
      */
     #BgDiff(backgroundLog) {
-        let oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0);
-
-        let old_ready_tetris = backgroundLog.log_dual_tetris[1], cur_ready_tetris = this.#dual_tetromino[1 - this.#tetIdx].blocks;
-        for (let i = 0; i < old_ready_tetris.length; i++) {
-            if (old_ready_tetris[i].x != cur_ready_tetris[i].x + Background.WIDTH + 3 || old_ready_tetris[i].y != cur_ready_tetris[i].y + 2 || old_ready_tetris[i].style != cur_ready_tetris[i].style) {
-                if (old_ready_tetris[i].x == undefined) {
-                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
-
-                } else if (old_ready_tetris[i].x == cur_ready_tetris[i].x + Background.WIDTH + 3 && old_ready_tetris[i].y == cur_ready_tetris[i].y + 2) {
-                    exBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
-
-                } else {
-                    oldBg.push(old_ready_tetris[i].x, old_ready_tetris[i].y, old_ready_tetris[i].style);
-                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
-
-                }
-                old_ready_tetris[i].init(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
-            }
-        }
+        let oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0), oldMap = new Map();
 
         // tetromino diff
+        let old_ready_tetris = backgroundLog.log_dual_tetris[1], cur_ready_tetris = this.#dual_tetromino[1 - this.#tetIdx].blocks;
         let old_tetris = backgroundLog.log_dual_tetris[0], cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
-        // let old_tetris = backgroundLog.log_tetris, cur_tetris = this.#dual_tetromino[this.#tetIdx].blocks;
         for (let i = 0; i < cur_tetris.length; i++) {
+            // auto down
             if (old_tetris[i].x != cur_tetris[i].x - 1 || old_tetris[i].y != cur_tetris[i].y || old_tetris[i].style != cur_tetris[i].style) {
                 if (old_tetris[i].x == undefined) {
                     newBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
@@ -524,11 +511,30 @@ export class Background {
 
                 } else {
                     oldBg.push(old_tetris[i].x, old_tetris[i].y, old_tetris[i].style);
+                    oldMap.set(`${old_tetris[i].x},${old_tetris[i].y}`, 1);
                     newBg.push(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
 
                 }
                 old_tetris[i].init(cur_tetris[i].x - 1, cur_tetris[i].y, cur_tetris[i].style);
             }
+
+            // ready
+            if (old_ready_tetris[i].x != cur_ready_tetris[i].x + Background.WIDTH + 3 || old_ready_tetris[i].y != cur_ready_tetris[i].y + 2 || old_ready_tetris[i].style != cur_ready_tetris[i].style) {
+                if (old_ready_tetris[i].x == undefined) {
+                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                } else if (old_ready_tetris[i].x == cur_ready_tetris[i].x + Background.WIDTH + 3 && old_ready_tetris[i].y == cur_ready_tetris[i].y + 2) {
+                    exBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                } else {
+                    oldBg.push(old_ready_tetris[i].x, old_ready_tetris[i].y, old_ready_tetris[i].style);
+                    oldMap.set(`${old_ready_tetris[i].x},${old_ready_tetris[i].y}`, 1);
+                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+
+                }
+                old_ready_tetris[i].init(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+            }
+
         }
 
         // background diff
@@ -544,6 +550,7 @@ export class Background {
 
                     } else if (log_blocksStyle[y][x] != -3) {
                         oldBg.push(x, y, -3);
+                        oldMap.set(`${x},${y}`, 1);
                         log_blocksStyle[y][x] = -3;
 
                     } else {
@@ -558,6 +565,20 @@ export class Background {
                 break;
             }
         }
+
+        let ni = 0;
+        while (newBg[ni] != undefined) {
+            ni += 3;
+            if (oldMap.has(`${newBg[ni]},${newBg[ni + 1]}`)) {
+                oldMap.delete(`${newBg[ni]},${newBg[ni + 1]}`);
+                let oi = 0;
+                for (; oi < oldBg.length; oi += 3) { if (oldBg[oi] == newBg[ni] && oldBg[oi + 1] == newBg[ni + 1]) { break; } }
+                if (oldBg[oi + 2] != newBg[ni + 2]) { exBg.push(newBg[ni], newBg[ni + 1], newBg[ni + 2]); }
+                oldBg.splice(oi, 3);
+                newBg.splice(ni, 3);
+            }
+        }
+
         return [oldBg, newBg, exBg, 0]
 
     }
@@ -566,9 +587,6 @@ export class Background {
 
 
 export class BackgroundLog {
-
-    // /** @type {Array<Block>} */
-    // log_tetris;
 
     /** @type {Array<Array<Block>>} */
     log_dual_tetris;
@@ -581,8 +599,6 @@ export class BackgroundLog {
             { length: Background.HEIGHT },
             () => new Array(Background.WIDTH).fill(-3)
         );
-        // this.log_tetris = Array.from({ length: 4 }, () => new Block());
-
         // this.log_dual_tetris = Array.from({ length: 2 }, () => new Array(4).fill(new Block())); // bug: Array().fill(): same obj
         this.log_dual_tetris = Array.from({ length: 2 }, () => Array.from({ length: 4 }, () => new Block()));
 
@@ -590,9 +606,6 @@ export class BackgroundLog {
 
     init() {
         for (const cs of this.log_blocksStyle) { cs.fill(-3); }
-        // for (const block of this.log_tetris) {
-        //     block.init(undefined, undefined, undefined);
-        // }
         for (const tetris of this.log_dual_tetris) {
             for (const block of tetris) {
                 block.init(undefined, undefined, undefined);
