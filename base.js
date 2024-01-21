@@ -248,16 +248,6 @@ class Tetromino {
 
 export class Background {
 
-    /** @type {Generator<number, void, unknown>} 随机不重复数字 */
-    #loopRan;
-
-    /**
-     * @type {Array<number>}
-     * #ARROW = [-x+, -y+, pause/game_over]; // 按键按下状态。
-     * #ARROW_hold = [0, 0]; // 每步累计的按键累加值。
-    */
-    #ARROW = [0, 0, 0]; #ARROW_hold = [0, 0, 0];
-
     static WIDTH = 10; static HEIGHT = 20;
 
     static #BG_WIDTH_OFFSET = 1;
@@ -267,6 +257,19 @@ export class Background {
 
     /** @type {number} */
     #autoDropSum = 0;
+
+    /** @type {Generator<number, void, unknown>} 随机不重复数字 */
+    #loopRan;
+
+    /**
+     * #KEY_BOARD_CODES = [-x+, -y+, exchangeTetromino, pause/game_over]; // 按键按下状态。
+     * #KEY_BOARD_CODE_HOLDS = [0...]; // 每步累计的按键累加值。
+     */
+    #KEY_BOARD_CODES = [0, 0, 0, 0, 0];
+    #KEY_BOARD_CODE_HOLDS = Array.from({ length: this.#KEY_BOARD_CODES.length }, () => 0);
+
+    #sP = 0;
+    #line = 0;
 
     /** @type {Array<Tetromino>} */
     #dual_tetromino;
@@ -298,8 +301,8 @@ export class Background {
         }
         this.#current_blocksStyle = blocksStyle;
 
-        element.addEventListener("keyup", (event) => this.#keyUpDown(event, true, this.#ARROW), true);
-        element.addEventListener("keydown", (event) => this.#keyUpDown(event, false, this.#ARROW), true);
+        element.addEventListener("keyup", (event) => this.#keyUpDown(event, true, this.#KEY_BOARD_CODES), true);
+        element.addEventListener("keydown", (event) => this.#keyUpDown(event, false, this.#KEY_BOARD_CODES), true);
 
         this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
     }
@@ -312,12 +315,12 @@ export class Background {
     #keyUpDown(event, isKeyUp, arrow) {
         // console.log(`PRESS: <${event.code}> ${isKeyUp ? 'up' : 'down'}`);
         switch (event.code) {
-            case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
-            case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
             case "ArrowLeft": arrow[0] = isKeyUp ? 0 : -1; break;
             case "ArrowRight": arrow[0] = isKeyUp ? 0 : 1; break;
-            case "Space": case "KeyP": if (!isKeyUp) { arrow[2] = arrow[2] == 0 ? 1 : 0; } break;
-            case "ShiftLeft": case "ShiftRight": break;
+            case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
+            case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
+            case "ShiftLeft": case "ShiftRight": arrow[2] = isKeyUp ? 0 : 1; break;
+            case "Space": case "KeyP": if (!isKeyUp) { arrow[3] = arrow[3] == 0 ? 1 : 0; } break;
             default: break;
         }
 
@@ -326,6 +329,8 @@ export class Background {
     init() {
         this.#exchangeTetromino();
         this.#autoDropSum = 0;
+        this.#sP = 0;
+        this.sub_sum = 0;
         for (let y = 0; y < Background.HEIGHT; y++) {
             for (let x = 1; x <= Background.WIDTH; x++) {
                 this.#current_blocksStyle[y][x] = -3;
@@ -404,11 +409,14 @@ export class Background {
 
         switch (sub_sum) {
             case 1: break;
-            case 2: break;
-            case 3: break;
-            case 4: break;
+            case 2: this.#sP += 1; break;
+            case 3: this.#sP += 3; break;
+            case 4: this.#sP += 6; break;
             default: break;
         }
+        this.#sP = Math.min(this.#sP, 30);
+        this.#line += sub_sum;
+
     }
 
     #hitBottom() {
@@ -424,9 +432,10 @@ export class Background {
 
         if (game_over) {
             console.log(`game over`);
+            // TODO
             this.init();
             tetris.banMoves[2] = false;
-            this.#ARROW[2] = 1;
+            this.#KEY_BOARD_CODES[3] = 1;
 
         } else {
             this.#subLine();
@@ -443,26 +452,34 @@ export class Background {
      * @returns {Array<Array<number>>}
      */
     run1Step(backgroundLog) {
-        if (this.#ARROW[2] == 1) { /* console.log(`pause`); */ return [[], [], [], 1]; }
+        if (this.#KEY_BOARD_CODES[3] == 1) { /* TODO console.log(`pause`); */ return [[], [], [], 1]; }
 
-        this.#ARROW[0] == 0 ? this.#ARROW_hold[0] = 0 : this.#ARROW_hold[0] += this.#ARROW[0];
-        this.#ARROW[1] == 0 ? this.#ARROW_hold[1] = 0 : this.#ARROW_hold[1] += this.#ARROW[1];
-        this.#ARROW[2] == 0 ? this.#ARROW_hold[2] = 0 : this.#ARROW_hold[2] += this.#ARROW[2];
-        // console.log(`ARROW:${this.#ARROW}, ARROW_hold:${this.#ARROW_hold}`);
+        for (const i in this.#KEY_BOARD_CODES) {
+            this.#KEY_BOARD_CODES[i] == 0 ? this.#KEY_BOARD_CODE_HOLDS[i] = 0 : this.#KEY_BOARD_CODE_HOLDS[i] += this.#KEY_BOARD_CODES[i];
+        }
+
+        // console.log(`KEY_BOARD_CODES:${this.#KEY_BOARD_CODES}, KEY_BOARD_CODE_HOLDS:${this.#KEY_BOARD_CODE_HOLDS}`);
         const tetris = this.#dual_tetromino[this.#tetIdx];
 
-        if (this.#ARROW[0] > 0 && this.#ARROW_hold[0] != 2) {
+        if (this.#KEY_BOARD_CODES[0] > 0 && this.#KEY_BOARD_CODE_HOLDS[0] != 2) {
             this.#borderAABB();
             if (!tetris.banMoves[1]) { tetris.moveBy(1, 0); }
 
-        } else if (this.#ARROW[0] < 0 && this.#ARROW_hold[0] != -2) {
+        } else if (this.#KEY_BOARD_CODES[0] < 0 && this.#KEY_BOARD_CODE_HOLDS[0] != -2) {
             this.#borderAABB();
             if (!tetris.banMoves[3]) { tetris.moveBy(-1, 0); }
 
         }
 
-        if (this.#ARROW[1] > 0) {
-            if (this.#ARROW_hold[1] == 1) {
+        if (this.#KEY_BOARD_CODE_HOLDS[2] == 1) {
+            if (this.#sP > 0) {
+                this.#sP --;
+                this.#exchangeTetromino();
+            }
+        }
+
+        if (this.#KEY_BOARD_CODES[1] > 0) {
+            if (this.#KEY_BOARD_CODE_HOLDS[1] == 1) {
                 tetris.rotate()
                 if (this.#overAABB()) {
                     // tetris.rotate(); tetris.rotate(); tetris.rotate();
@@ -471,15 +488,17 @@ export class Background {
 
             }
 
-        } else if (this.#ARROW[1] < 0) {
-            this.#borderAABB();
-            if (tetris.banMoves[2]) { this.#hitBottom(); } else { tetris.moveBy(0, 1); }
+        } else if (this.#KEY_BOARD_CODES[1] < 0) {
+            for (let y = 0; y < this.#KEY_BOARD_CODE_HOLDS[1] * -1 / 2; y++) {
+                this.#borderAABB();
+                if (tetris.banMoves[2]) { this.#KEY_BOARD_CODE_HOLDS[1] = 0; this.#hitBottom(); } else { tetris.moveBy(0, 1); }
+            }
 
         }
 
         if (this.#autoDropSum++ >= Background.#BG_AUTO_DROP_CYCLE) {
             this.#autoDropSum = 0;
-            if (this.#ARROW[1] >= 0) {
+            if (this.#KEY_BOARD_CODES[1] >= 0) {
                 this.#borderAABB();
                 if (tetris.banMoves[2]) { this.#hitBottom(); } else { tetris.moveBy(0, 1); }
             }
