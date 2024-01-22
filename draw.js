@@ -42,10 +42,10 @@ function initStyle() {
 
         style.innerHTML += `.c${i++} {
         width: 20px; height: 20px;
-        background-color: rgb(${v[0]}, ${v[1]}, ${v[2]});
-        border: 5px solid rgb(${l[0]}, ${l[1]}, ${l[2]});
-        border-bottom-color: rgb(${d[0]}, ${d[1]}, ${d[2]});
-        border-left-color: rgb(${d[0]}, ${d[1]}, ${d[2]});
+        background-color: rgb(${v[0]}, ${v[1]}, ${v[2]}, 4);
+        border: 5px solid rgb(${l[0]}, ${l[1]}, ${l[2]}, 4);
+        border-bottom-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
+        border-left-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
     }
 `;
 

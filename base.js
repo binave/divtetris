@@ -250,13 +250,12 @@ export class Background {
 
     static WIDTH = 10; static HEIGHT = 20;
 
+    static READY_OFFSET = 15;
+
     static #BG_WIDTH_OFFSET = 1;
 
-    static #BG_AUTO_DROP_CYCLE = 11;
+    static #BG_AUTO_DROP_CYCLE = 11; #autoDropSum = 0;
     // static #BG_AUTO_DROP_CYCLE = 3;
-
-    /** @type {number} */
-    #autoDropSum = 0;
 
     /** @type {Generator<number, void, unknown>} 随机不重复数字 */
     #loopRan;
@@ -268,6 +267,8 @@ export class Background {
     #KEY_BOARD_CODES = [0, 0, 0, 0, 0];
     #KEY_BOARD_CODE_HOLDS = Array.from({ length: this.#KEY_BOARD_CODES.length }, () => 0);
 
+    /** 1: pause, 2: gameover */
+    #gameStatus = 0;
     #sP = 0;
     #line = 0;
 
@@ -330,7 +331,8 @@ export class Background {
         this.#exchangeTetromino();
         this.#autoDropSum = 0;
         this.#sP = 0;
-        this.sub_sum = 0;
+        this.#line = 0;
+        this.#gameStatus = 0;
         for (let y = 0; y < Background.HEIGHT; y++) {
             for (let x = 1; x <= Background.WIDTH; x++) {
                 this.#current_blocksStyle[y][x] = -3;
@@ -420,24 +422,16 @@ export class Background {
     }
 
     #hitBottom() {
-        let game_over = false;
         const tetris = this.#dual_tetromino[this.#tetIdx];
         // console.log(`save to background: ${tetris.blocks}`);
         tetris.blocks.forEach(block => {
             if (block.y >= 0) {
                 this.#current_blocksStyle[block.y][block.x] = block.style;
 
-            } else { game_over = true; }
+            } else { this.#gameStatus = 2; this.#KEY_BOARD_CODES[3] = 1; console.log(`game over`); }
         });
 
-        if (game_over) {
-            console.log(`game over`);
-            // TODO
-            this.init();
-            tetris.banMoves[2] = false;
-            this.#KEY_BOARD_CODES[3] = 1;
-
-        } else {
+        if (this.#gameStatus != 2) {
             this.#subLine();
             this.#exchangeTetromino();
             tetris.banMoves[1] = true;
@@ -452,7 +446,16 @@ export class Background {
      * @returns {Array<Array<number>>}
      */
     run1Step(backgroundLog) {
-        if (this.#KEY_BOARD_CODES[3] == 1) { /* TODO console.log(`pause`); */ return [[], [], [], 1]; }
+        if (this.#KEY_BOARD_CODES[3] == 1) {
+             /* console.log(`pause`); */ return [[], [], [], [this.#gameStatus == 2 ? 2 : 1, this.#sP, this.#line]];
+
+        } else if (this.#gameStatus == 2) {
+            this.#gameStatus = 0;
+            this.init();
+            this.#dual_tetromino[this.#tetIdx].banMoves[2] = false;
+            return [[], [], [], [3, this.#sP, this.#line]];
+
+        }
 
         for (const i in this.#KEY_BOARD_CODES) {
             this.#KEY_BOARD_CODES[i] == 0 ? this.#KEY_BOARD_CODE_HOLDS[i] = 0 : this.#KEY_BOARD_CODE_HOLDS[i] += this.#KEY_BOARD_CODES[i];
@@ -491,7 +494,7 @@ export class Background {
         } else if (this.#KEY_BOARD_CODES[1] < 0) {
             for (let y = 0; y < this.#KEY_BOARD_CODE_HOLDS[1] * -1 / 2; y++) {
                 this.#borderAABB();
-                if (tetris.banMoves[2]) { this.#KEY_BOARD_CODE_HOLDS[1] = 0; this.#hitBottom(); } else { tetris.moveBy(0, 1); }
+                if (tetris.banMoves[2]) { this.#KEY_BOARD_CODE_HOLDS[1] = 2; this.#hitBottom(); } else { tetris.moveBy(0, 1); }
             }
 
         }
@@ -538,20 +541,20 @@ export class Background {
             }
 
             // ready
-            if (old_ready_tetris[i].x != cur_ready_tetris[i].x + Background.WIDTH + 3 || old_ready_tetris[i].y != cur_ready_tetris[i].y + 2 || old_ready_tetris[i].style != cur_ready_tetris[i].style) {
+            if (old_ready_tetris[i].x != cur_ready_tetris[i].x + Background.READY_OFFSET || old_ready_tetris[i].y != cur_ready_tetris[i].y + 2 || old_ready_tetris[i].style != cur_ready_tetris[i].style) {
                 if (old_ready_tetris[i].x == undefined) {
-                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+                    newBg.push(cur_ready_tetris[i].x + Background.READY_OFFSET, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
 
-                } else if (old_ready_tetris[i].x == cur_ready_tetris[i].x + Background.WIDTH + 3 && old_ready_tetris[i].y == cur_ready_tetris[i].y + 2) {
-                    exBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+                } else if (old_ready_tetris[i].x == cur_ready_tetris[i].x + Background.READY_OFFSET && old_ready_tetris[i].y == cur_ready_tetris[i].y + 2) {
+                    exBg.push(cur_ready_tetris[i].x + Background.READY_OFFSET, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
 
                 } else {
                     oldBg.push(old_ready_tetris[i].x, old_ready_tetris[i].y, old_ready_tetris[i].style);
                     oldMap.set(`${old_ready_tetris[i].x},${old_ready_tetris[i].y}`, 1);
-                    newBg.push(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+                    newBg.push(cur_ready_tetris[i].x + Background.READY_OFFSET, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
 
                 }
-                old_ready_tetris[i].init(cur_ready_tetris[i].x + Background.WIDTH + 3, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
+                old_ready_tetris[i].init(cur_ready_tetris[i].x + Background.READY_OFFSET, cur_ready_tetris[i].y + 2, cur_ready_tetris[i].style);
             }
 
         }
@@ -587,7 +590,6 @@ export class Background {
 
         let ni = 0;
         while (newBg[ni] != undefined) {
-            ni += 3;
             if (oldMap.has(`${newBg[ni]},${newBg[ni + 1]}`)) {
                 oldMap.delete(`${newBg[ni]},${newBg[ni + 1]}`);
                 let oi = 0;
@@ -596,9 +598,11 @@ export class Background {
                 oldBg.splice(oi, 3);
                 newBg.splice(ni, 3);
             }
+            ni += 3;
+
         }
 
-        return [oldBg, newBg, exBg, 0]
+        return [oldBg, newBg, exBg, [0, this.#sP, this.#line]]
 
     }
 
