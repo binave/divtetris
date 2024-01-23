@@ -9,16 +9,52 @@
             background-color: rgb(40, 40, 40);
         }
 
+        #leftTop {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 97px;
+            left: 96px;
+            background-color: rgb(40, 40, 40);
+            border: 3px solid rgb(40, 40, 40);
+            border-left-color: rgb(88, 88, 88);
+            border-top-color: rgb(88, 88, 88);
+            z-index: -1;
+
+        }
+
+        #leftTopHid {
+            position: absolute;
+            background-color: rgb(40, 40, 40);
+            width: 10px;
+            height: 10px;
+            top: 97px;
+            left: 96px;
+            z-index: -1;
+
+        }
+
         #rightTop {
             position: absolute;
             width: 50px;
             height: 50px;
-            top: 92px;
-            left: 343px;
+            top: 97px;
+            left: 348px;
             background-color: rgb(40, 40, 40);
-            border: 8px solid rgb(40, 40, 40);
+            border: 3px solid rgb(40, 40, 40);
             border-right-color: rgb(88, 88, 88);
             border-top-color: rgb(88, 88, 88);
+            z-index: -1;
+
+        }
+
+        #rightTopHid {
+            position: absolute;
+            background-color: rgb(40, 40, 40);
+            width: 10px;
+            height: 10px;
+            top: 97px;
+            left: 394px;
             z-index: -1;
 
         }
@@ -27,13 +63,48 @@
             position: absolute;
             width: 50px;
             height: 50px;
-            top: 643px;
-            left: 90px;
+            top: 648px;
+            left: 96px;
             background-color: rgb(40, 40, 40);
-            border: 8px solid rgb(40, 40, 40);
+            border: 3px solid rgb(40, 40, 40);
             border-left-color: rgb(88, 88, 88);
             border-bottom-color: rgb(88, 88, 88);
             z-index: -1;
+        }
+
+        #leftBottomHid {
+            position: absolute;
+            background-color: rgb(40, 40, 40);
+            width: 10px;
+            height: 10px;
+            top: 694px;
+            left: 96px;
+            z-index: -1;
+
+        }
+
+        #rightBottom {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 648px;
+            left: 348px;
+            background-color: rgb(40, 40, 40);
+            border: 3px solid rgb(40, 40, 40);
+            border-right-color: rgb(88, 88, 88);
+            border-bottom-color: rgb(88, 88, 88);
+            z-index: -1;
+        }
+
+        #rightBottomHid {
+            position: absolute;
+            background-color: rgb(40, 40, 40);
+            width: 10px;
+            height: 10px;
+            top: 694px;
+            left: 394px;
+            z-index: -1;
+
         }
 
         #main1 {
@@ -190,8 +261,14 @@
     <div id="ready2"></div>
     <div id="score2" style="display: none;">score: 0</div>
 
-    <div id="leftBottom"></div>
+    <div id="leftTop"></div>
+    <div id="leftTopHid"></div>
     <div id="rightTop"></div>
+    <div id="rightTopHid"></div>
+    <div id="leftBottom"></div>
+    <div id="leftBottomHid"></div>
+    <div id="rightBottom"></div>
+    <div id="rightBottomHid"></div>
 </body>
 
 </html>
