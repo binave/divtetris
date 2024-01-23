@@ -40,16 +40,33 @@ function initStyle() {
             v[2] == 255 ? 170 : v[2]
         ];
 
-        style.innerHTML += `.c${i++} {
-        width: 20px; height: 20px;
-        background-color: rgb(${v[0]}, ${v[1]}, ${v[2]}, 4);
-        border: 5px solid rgb(${l[0]}, ${l[1]}, ${l[2]}, 4);
-        border-bottom-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
-        border-left-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
-    }
-`;
+        style.innerHTML += colorStyle('c', v, l, d, i++, 20, 20, 5);
+        style.innerHTML += colorStyle('r', v, l, d, i - 1, 10, 10, 2);
 
     }
 
     return style;
+}
+
+/**
+ *
+ * @param {string} name
+ * @param {Array<number?} v
+ * @param {Array<number?} l
+ * @param {Array<number?} d
+ * @param {number} i
+ * @param {number} width
+ * @param {number} height
+ * @param {number} border
+ * @returns {string}
+ */
+function colorStyle(name, v, l, d, i, width, height, border) {
+    return `.${name}${i} {
+        width: ${width}px; height: ${height}px;
+        background-color: rgb(${v[0]}, ${v[1]}, ${v[2]}, 4);
+        border: ${border}px solid rgb(${l[0]}, ${l[1]}, ${l[2]}, 4);
+        border-bottom-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
+        border-left-color: rgb(${d[0]}, ${d[1]}, ${d[2]}, 4);
+    }
+`;
 }
