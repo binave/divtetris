@@ -318,7 +318,7 @@ export class Background {
             case "ArrowRight": arrow[0] = isKeyUp ? 0 : 1; break;
             case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
             case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
-            case "ShiftLeft": case "ShiftRight": arrow[2] = isKeyUp ? 0 : 1; break;
+            /* case "ShiftLeft": */ case "ShiftRight": arrow[2] = isKeyUp ? 0 : 1; break;
             case "Space": case "KeyP": if (!isKeyUp) { arrow[3] = arrow[3] == 0 ? 1 : 0; } break;
             default: break;
         }
