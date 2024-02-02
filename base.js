@@ -88,6 +88,15 @@ class Tetromino {
         this.blocks = Array.from({ length: 4 }, () => new Block()); // 初始化4个block
     }
 
+    static #LTZO = [
+        [0, 0, 1, 0], // L
+        [0, 0, 2, 0], // T
+        [1, 0, 2, 0], // L
+        [0, 0, 0, 1], // O
+        [0, 0, 2, 1], // Z
+        [2, 0, 0, 1] // Z
+    ];
+
     /**
      * 随机 6 种形状和若干颜色。并指定生成 I 型。
      *
@@ -116,18 +125,19 @@ class Tetromino {
         }
 
         /** @type {Array<number>} [ 0:x1, 1:y1, 2:x2, 3:y2 ] */
-        let non;
+        let non = Tetromino.#LTZO[getRandomInt(Tetromino.#LTZO.length)];
 
-        do {
-            non = [getRandomInt(3), getRandomInt(2), getRandomInt(3), getRandomInt(2)];
-
-        } while (
-            (non[0] == non[2] && non[1] == non[3]) ||
-            (non[1] != non[3] && (
-                Math.abs(non[0] - non[2]) == 1 ||
-                (non[0] == non[2] && non[0] != 2)
-            ))
-        )
+        // let non;
+        // do {
+        //     non = [getRandomInt(3), getRandomInt(2), getRandomInt(3), getRandomInt(2)];
+        //
+        // } while (
+        //     (non[0] == non[2] && non[1] == non[3]) ||
+        //     (non[1] != non[3] && (
+        //         Math.abs(non[0] - non[2]) == 1 ||
+        //         (non[0] == non[2] && non[0] != 2)
+        //     ))
+        // )
 
         let i = 0;
         for (let x = 0; x < 3; x++) {
@@ -163,7 +173,7 @@ class Tetromino {
         //         }
         //     }
         // }
-
+        //
         // return this; // bug: [new Tetromino().init(), new Tetromino().init()]: random undefined
 
     }
@@ -242,19 +252,17 @@ class Tetromino {
 export class Background {
 
     static WIDTH = 10; static HEIGHT = 20;
+    static WALL = -1; static EMPTY = -3;
     static #BG_WIDTH_OFFSET = 1;
     static #BG_AUTO_DROP_CYCLE = 11; #autoDropSum = 0;
 
-    static WALL = -1; static EMPTY = -3;
-
     /**
-     * KEY_BOARD_CODES = [-x+, -y+, exchangeTetromino, pause/game_over]; // 按键按下状态。
-     * #KEY_BOARD_CODE_HOLDS = [0...]; // 每步累计的按键累加值。
+     * [-x+, -y+, exchangeTetromino, pause/game_over] 按键按下状态每步累计的按键累加值。
      */
-    #KEY_BOARD_CODE_HOLDS = Array.from({ length: 5 }, () => 0);
+    #key_board_code_holds = Array.from({ length: 5 }, () => 0);
 
     /** 1: pause, 2: gameover */
-    #gameStatus = 0; #sP = 0; #line = 0;
+    #gameStatus = 0; #sP = 0; #subLineSum = 0;
 
     #generateTetrisLine = false;
 
@@ -283,19 +291,16 @@ export class Background {
             }
         }
         this.#current_blocksStyle = blocksStyle;
-
-        this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
+        this.#dual_tetromino[this.#tetIdx].moveBy(5, -2);
         this.#snapshot = new Snapshot();
 
     }
-
-
 
     init() {
         this.#exchangeTetromino();
         this.#autoDropSum = 0;
         this.#sP = 0;
-        this.#line = 0;
+        this.#subLineSum = 0;
         this.#gameStatus = 0;
         this.#snapshot.init();
         for (let y = 0; y < Background.HEIGHT; y++) {
@@ -310,13 +315,10 @@ export class Background {
         this.#dual_tetromino[this.#tetIdx].init(this.#loopRan.next().value, this.#generateTetrisLine);
         this.#generateTetrisLine = false;
         this.#tetIdx = 1 - this.#tetIdx;
-        this.#dual_tetromino[this.#tetIdx].moveBy(5, -1);
+        this.#dual_tetromino[this.#tetIdx].moveBy(5, -2);
 
     }
 
-    /**
-     *
-     */
     #borderAABB() {
         const tetris = this.#dual_tetromino[this.#tetIdx], cur_style = this.#current_blocksStyle;
         tetris.banMoves.fill(false);
@@ -327,14 +329,14 @@ export class Background {
             }
 
             tetris.banMoves = [
-                tetris.banMoves[0] /*|| (cur_style[block.y - 1] == undefined ||
-                    cur_style[block.y - 1][block.x] > -2) */,
-                tetris.banMoves[1] || (cur_style[block.y] == undefined ||
-                    cur_style[block.y][block.x + 1] > -2),
-                tetris.banMoves[2] || (cur_style[block.y + 1] == undefined ||
-                    cur_style[block.y + 1][block.x] > -2),
-                tetris.banMoves[3] || (cur_style[block.y] == undefined ||
-                    cur_style[block.y][block.x - 1] > -2)
+                tetris.banMoves[0] /*|| cur_style[block.y - 1] == undefined ||
+                    cur_style[block.y - 1][block.x] > -2 */,
+                tetris.banMoves[1] || cur_style[block.y] == undefined ||
+                cur_style[block.y][block.x + 1] > -2,
+                tetris.banMoves[2] || (cur_style[block.y + 1] != undefined &&
+                    cur_style[block.y + 1][block.x] > -2), // moveBy(5, -2)
+                tetris.banMoves[3] || cur_style[block.y] == undefined ||
+                cur_style[block.y][block.x - 1] > -2
             ]
 
         }
@@ -363,7 +365,6 @@ export class Background {
             }
             if (block_sum == Background.WIDTH) {
                 sub_sum++;
-                // let styleArr = this.#current_blocksStyle[y];
                 let [styleArr] = this.#current_blocksStyle.splice(y++, 1);
                 styleArr.fill(Background.EMPTY);
                 styleArr[0] = Background.WALL;
@@ -404,7 +405,7 @@ export class Background {
             default: break;
         }
         this.#sP = Math.min(this.#sP, 30);
-        this.#line += sub_sum;
+        this.#subLineSum += sub_sum;
 
     }
 
@@ -415,7 +416,7 @@ export class Background {
             if (block.y >= 0) {
                 this.#current_blocksStyle[block.y][block.x] = block.style;
 
-            } else { this.#gameStatus = 2; console.log(`game over`); }
+            } else { this.#gameStatus = 2; console.log(`game over, ${this.#subLineSum}`); return; }
         });
 
         if (this.#gameStatus != 2) {
@@ -429,47 +430,58 @@ export class Background {
     }
 
     /**
-     * @param {Array<number>} key_board_codes
-     * @returns {Array<Array<number>>}
+     * @param {Array<number>} key_board_codes [-x+, -y+, exchangeTetromino, pause/game_over]
+     * @returns {Array<Array<number>>} [oldBg, newBg, exBg, ready, [gameStatus, sp, subLineSum]]
      */
     run1Step(key_board_codes) {
-        if (key_board_codes[3] == 1) {
-             /* console.log(`pause`); */ return [[], [], [], [], [this.#gameStatus == 2 ? 2 : 1, this.#sP, this.#line]];
-
-        } else if (this.#gameStatus == 2) {
-            this.#gameStatus = 0;
-            this.init();
-            this.#dual_tetromino[this.#tetIdx].banMoves[2] = false;
-            return [[], [], [], [], [3, this.#sP, this.#line]];
-
-        }
-
         for (const i in key_board_codes) {
-            key_board_codes[i] == 0 ? this.#KEY_BOARD_CODE_HOLDS[i] = 0 : this.#KEY_BOARD_CODE_HOLDS[i] += key_board_codes[i];
+            key_board_codes[i] == 0 ? this.#key_board_code_holds[i] = 0 : this.#key_board_code_holds[i] += key_board_codes[i];
         }
 
-        // console.log(`key_board_codes:${key_board_codes}, KEY_BOARD_CODE_HOLDS:${this.#KEY_BOARD_CODE_HOLDS}`);
+        if (this.#key_board_code_holds[3] == 1) {
+            if (this.#gameStatus == 0) {
+                this.#gameStatus = 1;
+                return [[], [], [], [], [1, this.#sP, this.#subLineSum]];
+
+            } else if (this.#gameStatus == 1) {
+                this.#gameStatus = 0;
+
+            } else if (this.#gameStatus == 2) {
+                this.#gameStatus = 0;
+                this.init();
+                this.#dual_tetromino[this.#tetIdx].banMoves[2] = false;
+                return [[], [], [], [], [3, this.#sP, this.#subLineSum]];
+            }
+
+        }
+
+        if (this.#gameStatus != 0) {
+            return [[], [], [], [], [this.#gameStatus == 2 ? 2 : 1, this.#sP, this.#subLineSum]];
+        }
+
+
+        // console.log(`key_board_codes:${key_board_codes}, key_board_code_holds:${this.#key_board_code_holds}`);
         const tetris = this.#dual_tetromino[this.#tetIdx];
 
-        if (key_board_codes[0] > 0 && this.#KEY_BOARD_CODE_HOLDS[0] != 2) {
+        if (this.#key_board_code_holds[0] > 0 && this.#key_board_code_holds[0] != 2) {
             this.#borderAABB();
             if (!tetris.banMoves[1]) { tetris.moveBy(1, 0); }
 
-        } else if (key_board_codes[0] < 0 && this.#KEY_BOARD_CODE_HOLDS[0] != -2) {
+        } else if (this.#key_board_code_holds[0] < 0 && this.#key_board_code_holds[0] != -2) {
             this.#borderAABB();
             if (!tetris.banMoves[3]) { tetris.moveBy(-1, 0); }
 
         }
 
-        if (this.#KEY_BOARD_CODE_HOLDS[2] == 1) {
+        if (this.#key_board_code_holds[2] == 1) {
             if (this.#sP > 0) {
                 this.#sP --;
                 this.#exchangeTetromino();
             }
         }
 
-        if (key_board_codes[1] > 0) {
-            if (this.#KEY_BOARD_CODE_HOLDS[1] == 1) {
+        if (this.#key_board_code_holds[1] > 0) {
+            if (this.#key_board_code_holds[1] == 1) {
                 tetris.rotate()
                 if (this.#overAABB()) {
                     // tetris.rotate(); tetris.rotate(); tetris.rotate();
@@ -478,17 +490,17 @@ export class Background {
 
             }
 
-        } else if (key_board_codes[1] < 0) {
-            for (let y = 0; y < this.#KEY_BOARD_CODE_HOLDS[1] * -1 / 2; y++) {
+        } else if (this.#key_board_code_holds[1] < 0) {
+            for (let y = 0; y < this.#key_board_code_holds[1] * -1 / 2; y++) {
                 this.#borderAABB();
-                if (tetris.banMoves[2]) { this.#KEY_BOARD_CODE_HOLDS[1] = 2; this.#hitBottom(); } else { tetris.moveBy(0, 1); }
+                if (tetris.banMoves[2]) { this.#key_board_code_holds[1] = 2; this.#hitBottom(); } else { tetris.moveBy(0, 1); }
             }
 
         }
 
         if (this.#autoDropSum++ >= Background.#BG_AUTO_DROP_CYCLE) {
             this.#autoDropSum = 0;
-            if (key_board_codes[1] >= 0) {
+            if (this.#key_board_code_holds[1] >= 0) {
                 this.#borderAABB();
                 if (tetris.banMoves[2]) { this.#hitBottom(); } else { tetris.moveBy(0, 1); }
             }
@@ -500,7 +512,7 @@ export class Background {
 
 
     /**
-     * @returns {Array<Array<number>>}
+     * @returns {Array<Array<number>>} [oldBg, newBg, exBg, ready, [gameStatus, sp, subLineSum]]
      */
     #BgDiff() {
         const oldBg = new Array(0), newBg = new Array(0), exBg = new Array(0), oldMap = new Map();
@@ -551,9 +563,7 @@ export class Background {
 
                 }
             }
-            if (blocksStyleSum == 0) {
-                break;
-            }
+            if (blocksStyleSum == 0) { break; }
         }
 
         // trim block
@@ -580,7 +590,7 @@ export class Background {
             }
         }
 
-        return [oldBg, newBg, exBg, ready, [0, this.#sP, this.#line]];
+        return [oldBg, newBg, exBg, ready, [0, this.#sP, this.#subLineSum]];
 
     }
 

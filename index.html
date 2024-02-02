@@ -160,7 +160,6 @@
         // firefox => about:config => security.fileuri.strict_origin_policy=false
         import { Background } from "./base.js";
 
-
         /**
          * @param {KeyboardEvent} event
          * @param {boolean} isKeyUp
@@ -173,8 +172,8 @@
                 case "ArrowRight": arrow[0] = isKeyUp ? 0 : 1; break;
                 case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
                 case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
-            /* case "ShiftLeft": */ case "ShiftRight": arrow[2] = isKeyUp ? 0 : 1; break;
-                case "Space": case "KeyP": if (!isKeyUp) { arrow[3] = arrow[3] == 0 ? 1 : 0; } break;
+                case "ShiftRight": /* case "ShiftLeft": */ arrow[2] = isKeyUp ? 0 : 1; break;
+                case "Space": case "KeyP": arrow[3] = isKeyUp ? 0 : 1; break;
                 default: break;
             }
 
@@ -182,7 +181,7 @@
 
 
         function step() {
-            history.push(bg.run1Step(KEY_BOARD_CODES_R));
+            history.push(bg.run1Step(key_board_codes_r));
 
             let [oldBg, newBg, exBg, ready, status] = history.at(-1);
 
@@ -264,16 +263,14 @@
         const element_ready1 = document.getElementById('ready1');
         const element_hold1 = document.getElementById('hold1');
         let show_hold = true, show_score = 0;
+        /** @type {Array<Array<Array<number>>>} */ const history = new Array();
 
-        /**
-         * KEY_BOARD_CODES_R = [-x+, -y+, exchangeTetromino, pause/game_over]; // 按键按下状态。
-         */
-        const KEY_BOARD_CODES_R = [0, 0, 0, 0, 0], bg = new Background();
-         /** @type {Array<Array<Array<number>>>} */ const history = new Array();
+        /** key_board_codes_r = [-x+, -y+, exchangeTetromino, pause/game_over]  按键按下状态。 */
+        const key_board_codes_r = [0, 0, 0, 0, 0];
+        window.addEventListener("keyup", (event) => keyUpDownR(event, true, key_board_codes_r), true);
+        document.addEventListener("keydown", (event) => keyUpDownR(event, false, key_board_codes_r), true);
 
-        window.addEventListener("keyup", (event) => keyUpDownR(event, true, KEY_BOARD_CODES_R), true);
-        document.addEventListener("keydown", (event) => keyUpDownR(event, false, KEY_BOARD_CODES_R), true);
-
+        const bg = new Background();
         step();
 
     </script>
