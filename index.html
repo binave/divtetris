@@ -15,8 +15,8 @@
             height: 50px;
             top: 97px;
             left: 96px;
-            background-color: rgb(40, 40, 40);
-            border: 3px solid rgb(40, 40, 40);
+            background-color: rgb(0, 0, 0, 0);
+            border: 3px solid rgb(0, 0, 0, 0);
             border-left-color: rgb(88, 88, 88);
             border-top-color: rgb(88, 88, 88);
             z-index: -1;
@@ -40,8 +40,8 @@
             height: 50px;
             top: 97px;
             left: 348px;
-            background-color: rgb(40, 40, 40);
-            border: 3px solid rgb(40, 40, 40);
+            background-color: rgb(0, 0, 0, 0);
+            border: 3px solid rgb(0, 0, 0, 0);
             border-right-color: rgb(88, 88, 88);
             border-top-color: rgb(88, 88, 88);
             z-index: -1;
@@ -65,8 +65,8 @@
             height: 50px;
             top: 648px;
             left: 96px;
-            background-color: rgb(40, 40, 40);
-            border: 3px solid rgb(40, 40, 40);
+            background-color: rgb(0, 0, 0, 0);
+            border: 3px solid rgb(0, 0, 0, 0);
             border-left-color: rgb(88, 88, 88);
             border-bottom-color: rgb(88, 88, 88);
             z-index: -1;
@@ -89,8 +89,8 @@
             height: 50px;
             top: 648px;
             left: 348px;
-            background-color: rgb(40, 40, 40);
-            border: 3px solid rgb(40, 40, 40);
+            background-color: rgb(0, 0, 0, 0);
+            border: 3px solid rgb(0, 0, 0, 0);
             border-right-color: rgb(88, 88, 88);
             border-bottom-color: rgb(88, 88, 88);
             z-index: -1;
@@ -148,7 +148,6 @@
             background: rgba(0, 0, 0, .1);
             z-index: 1;
         }
-
     </style>
 </head>
 
@@ -159,11 +158,33 @@
     <script type="module">
         // chrome --allow-file-access-from-files
         // firefox => about:config => security.fileuri.strict_origin_policy=false
-        import { Background, BackgroundLog } from "./base.js";
+        import { Background } from "./base.js";
+
+
+        /**
+         * @param {KeyboardEvent} event
+         * @param {boolean} isKeyUp
+         * @param {Array<number>} arrow
+         */
+        function keyUpDownR(event, isKeyUp, arrow) {
+            // console.log(`PRESS: <${event.code}> ${isKeyUp ? 'up' : 'down'}`);
+            switch (event.code) {
+                case "ArrowLeft": arrow[0] = isKeyUp ? 0 : -1; break;
+                case "ArrowRight": arrow[0] = isKeyUp ? 0 : 1; break;
+                case "ArrowUp": arrow[1] = isKeyUp ? 0 : 1; break;
+                case "ArrowDown": arrow[1] = isKeyUp ? 0 : -1; break;
+            /* case "ShiftLeft": */ case "ShiftRight": arrow[2] = isKeyUp ? 0 : 1; break;
+                case "Space": case "KeyP": if (!isKeyUp) { arrow[3] = arrow[3] == 0 ? 1 : 0; } break;
+                default: break;
+            }
+
+        }
+
 
         function step() {
+            history.push(bg.run1Step(KEY_BOARD_CODES_R));
 
-            let [oldBg, newBg, exBg, ready, status] = bg.run1Step(bgLog);
+            let [oldBg, newBg, exBg, ready, status] = history.at(-1);
 
             if (show_score != status[2]) { show_score = status[2]; score1.innerText = `score: ${show_score}`; }
 
@@ -228,7 +249,7 @@
 
             } else if (status[0] == 3) {
                 for (const div of Array.from(element_main1.getElementsByTagName(`div`))) { div.remove(); }
-                bgLog.init();
+                // bgLog.init();
 
             }
 
@@ -244,9 +265,14 @@
         const element_hold1 = document.getElementById('hold1');
         let show_hold = true, show_score = 0;
 
-        // start
-        const bgLog = new BackgroundLog();
-        const bg = new Background(window);
+        /**
+         * KEY_BOARD_CODES_R = [-x+, -y+, exchangeTetromino, pause/game_over]; // 按键按下状态。
+         */
+        const KEY_BOARD_CODES_R = [0, 0, 0, 0, 0], bg = new Background();
+         /** @type {Array<Array<Array<number>>>} */ const history = new Array();
+
+        window.addEventListener("keyup", (event) => keyUpDownR(event, true, KEY_BOARD_CODES_R), true);
+        document.addEventListener("keydown", (event) => keyUpDownR(event, false, KEY_BOARD_CODES_R), true);
 
         step();
 
