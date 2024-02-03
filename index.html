@@ -5,108 +5,6 @@
     <meta charset="UTF-8">
     <title>dev tetris</title>
     <style>
-        body {
-            background-color: rgb(40, 40, 40);
-        }
-
-        #leftTop1 {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            top: 97px;
-            left: 96px;
-            background-color: rgb(0, 0, 0, 0);
-            border: 3px solid rgb(0, 0, 0, 0);
-            border-left-color: rgb(88, 88, 88);
-            border-top-color: rgb(88, 88, 88);
-            z-index: -1;
-
-        }
-
-        #leftTopHid1 {
-            position: absolute;
-            background-color: rgb(40, 40, 40);
-            width: 10px;
-            height: 10px;
-            top: 97px;
-            left: 96px;
-            z-index: -1;
-
-        }
-
-        #rightTop1 {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            top: 97px;
-            left: 348px;
-            background-color: rgb(0, 0, 0, 0);
-            border: 3px solid rgb(0, 0, 0, 0);
-            border-right-color: rgb(88, 88, 88);
-            border-top-color: rgb(88, 88, 88);
-            z-index: -1;
-
-        }
-
-        #rightTopHid1 {
-            position: absolute;
-            background-color: rgb(40, 40, 40);
-            width: 10px;
-            height: 10px;
-            top: 97px;
-            left: 394px;
-            z-index: -1;
-
-        }
-
-        #leftBottom1 {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            top: 648px;
-            left: 96px;
-            background-color: rgb(0, 0, 0, 0);
-            border: 3px solid rgb(0, 0, 0, 0);
-            border-left-color: rgb(88, 88, 88);
-            border-bottom-color: rgb(88, 88, 88);
-            z-index: -1;
-        }
-
-        #leftBottomHid1 {
-            position: absolute;
-            background-color: rgb(40, 40, 40);
-            width: 10px;
-            height: 10px;
-            top: 694px;
-            left: 96px;
-            z-index: -1;
-
-        }
-
-        #rightBottom1 {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            top: 648px;
-            left: 348px;
-            background-color: rgb(0, 0, 0, 0);
-            border: 3px solid rgb(0, 0, 0, 0);
-            border-right-color: rgb(88, 88, 88);
-            border-bottom-color: rgb(88, 88, 88);
-            z-index: -1;
-        }
-
-        #rightBottomHid1 {
-            position: absolute;
-            background-color: rgb(40, 40, 40);
-            width: 10px;
-            height: 10px;
-            top: 694px;
-            left: 394px;
-            z-index: -1;
-
-        }
-
         #main1 {
             position: absolute;
             top: 100px;
@@ -257,7 +155,10 @@
         }
 
         // init
-        document.getElementsByTagName('head')[0].appendChild(initStyle());
+        // document.getElementsByTagName('head')[0].appendChild(initStyle());
+        initStyle(document.getElementsByTagName('style')[0]);
+        initBody(document.getElementsByTagName('body')[0]);
+
         const element_main1 = document.getElementById('main1');
         const element_score1 = document.getElementById('score1');
         const element_ready1 = document.getElementById('ready1');
@@ -284,14 +185,6 @@
     <div id="ready2"></div>
     <div id="score2" style="display: none;">score: 0</div>
 
-    <div id="leftTop1"></div>
-    <div id="leftTopHid1"></div>
-    <div id="rightTop1"></div>
-    <div id="rightTopHid1"></div>
-    <div id="leftBottom1"></div>
-    <div id="leftBottomHid1"></div>
-    <div id="rightBottom1"></div>
-    <div id="rightBottomHid1"></div>
 </body>
 
 </html>

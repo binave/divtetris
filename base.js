@@ -463,11 +463,11 @@ export class Background {
         // console.log(`key_board_codes:${key_board_codes}, key_board_code_holds:${this.#key_board_code_holds}`);
         const tetris = this.#dual_tetromino[this.#tetIdx];
 
-        if (this.#key_board_code_holds[0] > 0 && this.#key_board_code_holds[0] != 2) {
+        if (this.#key_board_code_holds[0] > 0 && this.#key_board_code_holds[0] != 2 && this.#key_board_code_holds[0] != 3) {
             this.#borderAABB();
             if (!tetris.banMoves[1]) { tetris.moveBy(1, 0); }
 
-        } else if (this.#key_board_code_holds[0] < 0 && this.#key_board_code_holds[0] != -2) {
+        } else if (this.#key_board_code_holds[0] < 0 && this.#key_board_code_holds[0] != -2 && this.#key_board_code_holds[0] != -3) {
             this.#borderAABB();
             if (!tetris.banMoves[3]) { tetris.moveBy(-1, 0); }
 
