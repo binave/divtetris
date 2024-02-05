@@ -77,12 +77,14 @@
 
         }
 
-
-        function step() {
-            history.push(bg.run1Step(key_board_codes_r));
-
-            let [oldBg, newBg, exBg, ready, status] = history.at(-1);
-
+        /**
+         * @param {Array<number>} oldBg
+         * @param {Array<number>} newBg
+         * @param {Array<number>} exBg
+         * @param {Array<number>} ready
+         * @param {Array<number>} status
+         */
+        function modifyStyle(oldBg, newBg, exBg, ready, status) {
             if (show_score != status[2]) { show_score = status[2]; score1.innerText = `score: ${show_score}`; }
 
             if (status[0] == 0) {
@@ -149,21 +151,35 @@
                 // bgLog.init();
 
             }
+        }
 
-            setTimeout(() => { step(); }, 60);
+        function logicStep() {
+            history.push(bg.run1Step(key_board_codes_r));
+            setTimeout(() => { logicStep(); }, 60);
+        }
+
+        /**
+         * @param {number} timestamp
+         */
+        function styleStep(timestamp) {
+            for (; length_mark < history.length; length_mark++) {
+                let [oldBg, newBg, exBg, ready, status] = history[length_mark];
+                modifyStyle(oldBg, newBg, exBg, ready, status);
+            }
+
+            window.requestAnimationFrame(styleStep);
 
         }
 
         // init
         // document.getElementsByTagName('head')[0].appendChild(initStyle());
-        initStyle(document.getElementsByTagName('style')[0]);
-        initBody(document.getElementsByTagName('body')[0]);
+        initStyle(document.getElementsByTagName('style')[0], document.getElementsByTagName('body')[0]);
 
         const element_main1 = document.getElementById('main1');
         const element_score1 = document.getElementById('score1');
         const element_ready1 = document.getElementById('ready1');
         const element_hold1 = document.getElementById('hold1');
-        let show_hold = true, show_score = 0;
+        let show_hold = true, show_score = 0, length_mark = 0;
         /** @type {Array<Array<Array<number>>>} */ const history = new Array();
 
         /** key_board_codes_r = [-x+, -y+, exchangeTetromino, pause/game_over]  按键按下状态。 */
@@ -172,7 +188,8 @@
         document.addEventListener("keydown", (event) => keyUpDownR(event, false, key_board_codes_r), true);
 
         const bg = new Background();
-        step();
+        logicStep();
+        window.requestAnimationFrame(styleStep);
 
     </script>
     <div id="main1"></div>

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+'use strict';
+
 class RGB {
     /** @type {number} */ r;
     /** @type {number} */ g;
@@ -59,16 +61,17 @@ const bg_border_hid_styles = [
 ];
 
 const tet_colors = [
-    new RGB(51, 204, 0, 4),
-    // new RGB(0, 255, 0, 4),
-    new RGB(255, 0, 0, 4),
-    new RGB(0, 0, 255, 4),
-    // new RGB(255, 0, 255, 4)
+    new RGB(0, 204, 0, 4),
+    new RGB(204, 0, 0, 4),
+    new RGB(0, 0, 204, 4),
     new RGB(204, 0, 204, 4)
 ];
 
-/** @param {HTMLElement} */
-function initStyle(styleElement) {
+/**
+ * @param {HTMLElement} styleElement
+ * @param {HTMLElement} bodyElement
+ */
+function initStyle(styleElement, bodyElement) {
 
     styleElement.innerHTML += `body { background-color: ${body_bg_color}; }
 `;
@@ -109,17 +112,11 @@ function initStyle(styleElement) {
 
     }
 
-    return styleElement;
+    for (const border of bg_border_styles) { bodyElement.innerHTML += `    <div id="${border.id}"></div>`; }
+    for (const hid of bg_border_hid_styles) { bodyElement.innerHTML += `    <div id="${hid.id}"></div>`; }
+
 }
 
-
-/**
- * @param {HTMLElement} elemet
- */
-function initBody(elemet) {
-    for (const border of bg_border_styles) { elemet.innerHTML += `    <div id="${border.id}"></div>`; }
-    for (const hid of bg_border_hid_styles) { elemet.innerHTML += `    <div id="${hid.id}"></div>`; }
-}
 
 /**
  * @param {string} name
