@@ -5,34 +5,6 @@
     <meta charset="UTF-8">
     <title>dev tetris</title>
     <style>
-        #main1 {
-            position: absolute;
-            top: 100px;
-            left: 100px;
-        }
-
-        #ready1 {
-            position: absolute;
-            top: 150px;
-            left: 450px;
-            /* transform: scale(0.3); */
-        }
-
-        #main1 div,
-        #ready1 div,
-        #main2 div,
-        #ready2 div {
-            position: absolute;
-        }
-
-        #score1 {
-            position: absolute;
-            color: rgb(140, 162, 162);
-            font-size: 15px;
-            top: 230px;
-            left: 440px;
-        }
-
         .box {
             display: none;
             width: 600px;
@@ -58,6 +30,31 @@
         // firefox => about:config => security.fileuri.strict_origin_policy=false
         import { Background } from "./base.js";
 
+        const displayOptions1 = {
+            styleElement: document.getElementsByTagName('style')[0],
+            bodyElement: document.getElementsByTagName('body')[0],
+            divElements: [
+                { id: `main1`, top: 100, left: 100 },
+                { id: `ready1`, top: 150, left: 450 },
+                { id: `score1`, top: 230, left: 440, color: new RGB(140, 162, 162), font_size: 15 },
+                { id: `hold1`, classname: `box` },
+                { id: `leftTop1`, top: 97, left: 96, bg: 50, dt: [`left`, `top`] },
+                { id: `rightTop1`, top: 97, left: 348, bg: 50, dt: [`right`, `top`] },
+                { id: `leftBottom1`, top: 648, left: 96, bg: 50, dt: [`left`, `bottom`] },
+                { id: `rightBottom1`, top: 648, left: 348, bg: 50, dt: [`right`, `bottom`] },
+                { id: `leftTopHid1`, top: 97, left: 96, bg: 10 },
+                { id: `rightTopHid1`, top: 97, left: 394, bg: 10 },
+                { id: `leftBottomHid1`, top: 694, left: 96, bg: 10 },
+                { id: `rightBottomHid1`, top: 694, left: 394, bg: 10 }
+            ],
+            bodyBgColor: new RGB(40, 40, 40),
+            bgBorderColor: new RGB(88, 88, 88),
+            tetrominoColors: [new RGB(0, 204, 0, 4), new RGB(204, 0, 0, 4), new RGB(0, 0, 204, 4), new RGB(204, 0, 204, 4)]
+
+        }
+
+        const cycleTimeout = 53, skipCycle = 10;
+
         /**
          * @param {KeyboardEvent} event
          * @param {boolean} isKeyUp
@@ -78,129 +75,38 @@
         }
 
         /**
-         * @param {Array<number>} oldBg
-         * @param {Array<number>} newBg
-         * @param {Array<number>} exBg
-         * @param {Array<number>} ready
-         * @param {Array<number>} status
-         */
-        function modifyStyle(oldBg, newBg, exBg, ready, status) {
-            if (show_score != status[2]) { show_score = status[2]; score1.innerText = `score: ${show_score}`; }
-
-            if (status[0] == 0) {
-                // console.log(`oldBg:size=${oldBg.length} ${oldBg},\nnewBg:size=${newBg.length} ${newBg},\n exBg:size=${exBg.length} ${exBg},\n ready:size=${ready.length} ${ready}`)
-                if (show_hold) { show_hold = false; element_hold1.style.display = 'none'; }
-
-                for (let i = 0; i < exBg.length; i += 3) {
-                    document.getElementById(`m${exBg[i]},${exBg[i + 1]}`).className = exBg[i + 1] >= 0 ? `c${exBg[i + 2]}` : '';
-                }
-
-                let i = 0, diff_size = newBg.length - oldBg.length;
-                for (; i < (diff_size > 0 ? oldBg.length : newBg.length); i += 3) {
-                    let x = newBg[i], y = newBg[i + 1], oldDiv = document.getElementById(`m${oldBg[i]},${oldBg[i + 1]}`);
-                    oldDiv.style.left = `${x * 30}px`;
-                    oldDiv.style.top = `${y * 30}px`;
-                    oldDiv.className = y >= 0 ? `c${newBg[i + 2]}` : '';
-                    oldDiv.id = `m${x},${y}`;
-                }
-
-                if (diff_size > 0) {
-                    for (; i < newBg.length; i += 3) {
-                        let x = newBg[i], y = newBg[i + 1], newDiv = document.createElement("div");
-                        newDiv.id = `m${x},${y}`;
-                        newDiv.style.left = `${x * 30}px`
-                        newDiv.style.top = `${y * 30}px`;
-                        newDiv.className = y >= 0 ? `c${newBg[i + 2]}` : '';
-                        element_main1.appendChild(newDiv);
-
-                    }
-
-                } else {
-                    for (; i < oldBg.length; i += 3) { document.getElementById(`m${oldBg[i]},${oldBg[i + 1]}`).remove(); }
-
-                }
-
-                // ready
-                let readyDivs = Array.from(element_ready1.getElementsByTagName(`div`));
-                if (readyDivs.length == 0) {
-                    for (let i = 0; i < ready.length; i += 3) {
-                        let newDiv = document.createElement("div");
-                        newDiv.style.left = `${ready[i] * 14}px`
-                        newDiv.style.top = `${ready[i + 1] * 14}px`;
-                        newDiv.className = `r${ready[i + 2]}`;
-                        ready1.appendChild(newDiv);
-                    }
-
-                } else {
-                    for (let i = 0; i < ready.length; i += 3) {
-                        readyDivs[i / 3].style.left = `${ready[i] * 14}px`
-                        readyDivs[i / 3].style.top = `${ready[i + 1] * 14}px`;
-                        readyDivs[i / 3].className = `r${ready[i + 2]}`
-                    }
-
-                }
-
-
-            } else if ((status[0] == 1 || status[0] == 2) && !show_hold) {
-                show_hold = true;
-                element_hold1.style.display = 'block';
-                element_hold1.innerText = status[0] == 1 ? 'push' : 'Game Over';
-
-            } else if (status[0] == 3) {
-                for (const div of Array.from(element_main1.getElementsByTagName(`div`))) { div.remove(); }
-                // bgLog.init();
-
-            }
-        }
-
-        function logicStep() {
-            history.push(bg.run1Step(key_board_codes_r));
-            setTimeout(() => { logicStep(); }, 60);
-        }
-
-        /**
          * @param {number} timestamp
          */
         function styleStep(timestamp) {
+            // frameTime = timestamp - lastTimestamp;
+            // console.log(`frameTime: ${frameTime}`);
+            // lastTimestamp = timestamp;
             for (; length_mark < history.length; length_mark++) {
                 let [oldBg, newBg, exBg, ready, status] = history[length_mark];
-                modifyStyle(oldBg, newBg, exBg, ready, status);
+                show1.modifyStyle(oldBg, newBg, exBg, ready, status);
             }
 
             window.requestAnimationFrame(styleStep);
 
         }
 
-        // init
-        // document.getElementsByTagName('head')[0].appendChild(initStyle());
-        initStyle(document.getElementsByTagName('style')[0], document.getElementsByTagName('body')[0]);
-
-        const element_main1 = document.getElementById('main1');
-        const element_score1 = document.getElementById('score1');
-        const element_ready1 = document.getElementById('ready1');
-        const element_hold1 = document.getElementById('hold1');
-        let show_hold = true, show_score = 0, length_mark = 0;
-        /** @type {Array<Array<Array<number>>>} */ const history = new Array();
-
         /** key_board_codes_r = [-x+, -y+, exchangeTetromino, pause/game_over]  按键按下状态。 */
         const key_board_codes_r = [0, 0, 0, 0, 0];
         window.addEventListener("keyup", (event) => keyUpDownR(event, true, key_board_codes_r), true);
         document.addEventListener("keydown", (event) => keyUpDownR(event, false, key_board_codes_r), true);
 
-        const bg = new Background();
-        logicStep();
+        let length_mark = 0, frameTime = 0, lastTimestamp = 0;
+
+        /** @type {Array<Array<Array<number>>>} */
+        const history = new Array();
+
+        const show1 = new Display(displayOptions1);
+        const bg1 = new Background(displayOptions1.tetrominoColors.length, skipCycle);
+
+        setInterval(() => { history.push(bg1.run1Step(key_board_codes_r)); }, cycleTimeout);
         window.requestAnimationFrame(styleStep);
 
     </script>
-    <div id="main1"></div>
-    <div id="ready1"></div>
-    <div id="score1">score: 0</div>
-
-    <div id="hold1" class="box"></div>
-
-    <div id="main2"></div>
-    <div id="ready2"></div>
-    <div id="score2" style="display: none;">score: 0</div>
 
 </body>
 

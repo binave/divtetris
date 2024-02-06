@@ -254,7 +254,8 @@ export class Background {
     static WIDTH = 10; static HEIGHT = 20;
     static WALL = -1; static EMPTY = -3;
     static #BG_WIDTH_OFFSET = 1;
-    static #BG_AUTO_DROP_CYCLE = 11; #autoDropSum = 0;
+    /** @type {number} */ #bg_auto_drop_cycle;
+    #autoDropSum = 0;
 
     /**
      * [-x+, -y+, exchangeTetromino, pause/game_over] 按键按下状态每步累计的按键累加值。
@@ -272,8 +273,13 @@ export class Background {
     /** @type {Array<Array<number>>} */ #current_blocksStyle;
     /** @type {Snapshot} */ #snapshot;
 
-    constructor() {
-        this.#loopRan = Shuffle(4);
+    /**
+     * @param {number} styleCount
+     * @param {number} skipCycle
+     */
+    constructor(styleCount, skipCycle) {
+        this.#loopRan = Shuffle(styleCount);
+        this.#bg_auto_drop_cycle = skipCycle;
         this.#dual_tetromino = [new Tetromino(), new Tetromino()];
         this.#dual_tetromino[0].init(this.#loopRan.next().value, false);
         this.#dual_tetromino[1].init(this.#loopRan.next().value, false);
@@ -498,7 +504,7 @@ export class Background {
 
         }
 
-        if (this.#autoDropSum++ >= Background.#BG_AUTO_DROP_CYCLE) {
+        if (this.#autoDropSum++ >= this.#bg_auto_drop_cycle) {
             this.#autoDropSum = 0;
             if (this.#key_board_code_holds[1] >= 0) {
                 this.#borderAABB();
