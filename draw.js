@@ -111,7 +111,7 @@ class Display {
 }
 #${any.id} div {
     position: absolute;
-    /* transition: transform 0.5s; */
+    transition: transform 0.2s;
 }
 
 `
