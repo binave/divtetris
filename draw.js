@@ -16,7 +16,7 @@
 
 'use strict';
 
-class RGB {
+export class RGB {
     /** @type {number} */ r;
     /** @type {number} */ g;
     /** @type {number} */ b;
@@ -53,7 +53,7 @@ class displayLaunchOptions {
     /** @type {RGB} */ bgBorderColor;
 }
 
-class Display {
+export class Display {
     /** @type {displayLaunchOptions} */ #options;
     /** @type {Map<string,HTMLElement>} */ #parentDivs;
     #show_hold = true;

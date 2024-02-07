@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>dev tetris</title>
+    <title>div tetris</title>
     <style>
         .box {
             display: none;
@@ -22,12 +22,10 @@
 </head>
 
 <body>
-    <!-- <script type="text/javascript" src="base.js"></script> -->
-    <script type="text/javascript" src="draw.js"></script>
-
     <script type="module">
         // chrome --allow-file-access-from-files
         // firefox => about:config => security.fileuri.strict_origin_policy=false
+        import { Display, RGB } from "./draw.js";
         import { Background } from "./base.js";
 
         const displayOptions1 = {

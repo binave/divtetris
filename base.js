@@ -266,6 +266,7 @@ export class Background {
     #gameStatus = 0; #sP = 0; #subLineSum = 0;
 
     #generateTetrisLine = false;
+    /** @type {Array<number>} */ #TetrisLineListCache = new Array();
 
     /** @type {Generator<number, void, unknown>} 随机不重复数字 */ #loopRan;
     /** @type {Array<Tetromino>} */ #dual_tetromino;
@@ -383,10 +384,14 @@ export class Background {
 
         }
 
+        /**
+         * find line space
+         */
         if (y <= Background.HEIGHT - 5 && !this.#generateTetrisLine) {
             const bs = this.#current_blocksStyle;
             for (let x = 0; x < Background.WIDTH; x++) {
                 for (let _y = y + 1; _y < Background.HEIGHT - 2; _y++) {
+                    // TODO if (this.#TetrisLineListCache = new Array()[0] == ) { continue; }
                     if (bs[_y][x + 1] != Background.EMPTY) { break; }
                     if (
                         bs[_y + 0][x] != Background.EMPTY && bs[_y + 0][x + 1] == Background.EMPTY && bs[_y + 0][x + 2] != Background.EMPTY &&
